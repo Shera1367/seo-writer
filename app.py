@@ -1,64 +1,50 @@
 import streamlit as st
-import requests
-import json
+from openai import OpenAI
 
 # Page Config
-st.set_page_config(page_title="Professional SEO Content Engine", layout="wide")
+st.set_page_config(page_title="Professional SEO Writer", layout="wide")
 
-# Your API Key from the screenshot
-API_KEY = "AIzaSyA-qdNkgPPL31NkuOeHDyF5ducJRuD-0LU"
+# Your Paid OpenAI API Key
+API_KEY = "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"
 
 st.title("🚀 Professional SEO Content Engine")
-st.info("Stable Mode: Optimized for Free Tier API Keys")
+st.info("System Status: Online | Powered by OpenAI GPT-4o")
 
 # Sidebar
 with st.sidebar:
-    st.header("Global Settings")
-    tone = st.selectbox("Tone of Voice", ["Professional", "Informative", "Casual", "Technical", "Authoritative"])
-    word_count = st.number_input("Target Word Count", min_value=300, max_value=5000, value=1000)
+    st.header("Settings")
+    tone = st.selectbox("Tone", ["Professional", "Informative", "Casual", "Technical"])
+    word_count = st.number_input("Words", min_value=300, max_value=5000, value=1000)
 
-# Main Input Fields
+# Main UI
 col1, col2 = st.columns(2)
 with col1:
-    article_title = st.text_input("Article Title")
+    title = st.text_input("Article Title")
     keywords = st.text_area("Keywords")
 with col2:
     headings = st.text_area("Suggested Headings")
-    extra_instructions = st.text_area("Extra Instructions")
+    extra = st.text_area("Instructions")
 
 if st.button("Generate HTML Article"):
-    if not article_title:
-        st.error("Please enter the Article Title.")
+    if not title:
+        st.error("Please enter a title.")
     else:
         try:
-            with st.spinner("Connecting to Gemini (Free Tier Mode)..."):
-                # استفاده از gemini-pro که برای اکانت‌های رایگان پایدارتر است
-                url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key={API_KEY}"
+            with st.spinner("Writing..."):
+                client = OpenAI(api_key=API_KEY)
+                prompt = f"Write an SEO article. Title: {title}. Keywords: {keywords}. Headings: {headings}. Tone: {tone}. Length: {word_count} words. Extra: {extra}. Format: Raw HTML (h2, h3, p, ul, li)."
                 
-                payload = {
-                    "contents": [{
-                        "parts": [{
-                            "text": f"Write a professional SEO article in English.\nTitle: {article_title}\nKeywords: {keywords}\nStructure: {headings}\nTone: {tone}\nTarget Length: {word_count} words.\nInstructions: {extra_instructions}\n\nFormat: Return ONLY the content wrapped in HTML tags (h2, h3, p, ul, li, strong). No markdown blocks."
-                        }]
-                    }]
-                }
+                response = client.chat.completions.create(
+                    model="gpt-4o",
+                    messages=[{"role": "user", "content": prompt}]
+                )
                 
-                headers = {'Content-Type': 'application/json'}
-                response = requests.post(url, headers=headers, data=json.dumps(payload))
-                result = response.json()
-
-                if response.status_code == 200:
-                    article_text = result['candidates'][0]['content']['parts'][0]['text']
-                    st.success("Success!")
-                    
-                    tab1, tab2 = st.tabs(["Preview", "HTML Source"])
-                    with tab1:
-                        st.markdown(article_text, unsafe_allow_html=True)
-                    with tab2:
-                        st.code(article_text, language="html")
-                else:
-                    st.error(f"API Error: {result.get('error', {}).get('message', 'Unknown Error')}")
-                    st.write("Tip: Your Free Tier key might need 'gemini-pro' instead of 'flash'.")
-                
+                content = response.choices[0].message.content
+                st.success("Done!")
+                tab1, tab2 = st.tabs(["Preview", "HTML Code"])
+                with tab1:
+                    st.markdown(content, unsafe_allow_html=True)
+                with tab2:
+                    st.code(content, language="html")
         except Exception as e:
-            st.error(f"System Error: {str(e)}")
+            st.error(f"Error: {e}")

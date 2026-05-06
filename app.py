@@ -9,7 +9,7 @@ st.set_page_config(page_title="Professional SEO Content Engine", layout="wide")
 API_KEY = "AIzaSyA-qdNkgPPL31NkuOeHDyF5ducJRuD-0LU"
 
 st.title("🚀 Professional SEO Content Engine")
-st.info("This tool generates full English articles in ready-to-use HTML format.")
+st.info("Generating SEO-optimized articles using direct Google API connection.")
 
 # Sidebar
 with st.sidebar:
@@ -31,9 +31,9 @@ if st.button("Generate HTML Article"):
         st.error("Please enter the Article Title.")
     else:
         try:
-            with st.spinner("Directly connecting to Gemini..."):
-                # Direct REST API call to avoid 404/v1beta issues
-                url = f"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={API_KEY}"
+            with st.spinner("Connecting to Google AI..."):
+                # We try v1beta which is currently the most compatible for 1.5-flash
+                url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={API_KEY}"
                 
                 payload = {
                     "contents": [{
@@ -57,7 +57,9 @@ if st.button("Generate HTML Article"):
                     with tab2:
                         st.code(article_text, language="html")
                 else:
-                    st.error(f"API Error: {result.get('error', {}).get('message', 'Unknown Error')}")
+                    error_msg = result.get('error', {}).get('message', 'Unknown Error')
+                    st.error(f"API Error: {error_msg}")
+                    st.write("Tip: If you see 'not found', Google might have changed the endpoint. I will help you fix it.")
                 
         except Exception as e:
             st.error(f"System Error: {str(e)}")

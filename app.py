@@ -5,8 +5,7 @@ from openai import OpenAI
 st.set_page_config(page_title="Professional SEO Writer", layout="wide")
 
 # Your Paid OpenAI API Key
-API_KEY = "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"
-
+API_KEY = "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"
 st.title("🚀 Professional SEO Content Engine")
 st.info("System Status: Online | Powered by OpenAI GPT-4o")
 

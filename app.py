@@ -34,8 +34,8 @@ if st.button("Generate HTML Article"):
     else:
         try:
             with st.spinner("Gemini is crafting your content..."):
-                # تغییر نام مدل برای رفع ارور 404
-                model = genai.GenerativeModel('gemini-pro') 
+                # Updated model selection to avoid 404
+                model = genai.GenerativeModel(model_name='gemini-1.5-flash') 
                 
                 prompt = f"""
                 Write a complete, high-quality SEO article in English.
@@ -48,20 +48,26 @@ if st.button("Generate HTML Article"):
                 
                 Format Requirements:
                 1. Output MUST be in raw HTML format (using <h2>, <h3>, <p>, <ul>, <li>, <strong>).
-                2. DO NOT use markdown code blocks.
-                3. Ensure the content is human-like.
+                2. DO NOT use markdown code blocks or ```html tags in the output.
+                3. Ensure the content is human-like and professional.
                 """
                 
                 response = model.generate_content(prompt)
-                article_content = response.text
                 
-                st.success("Generation Complete!")
-                
-                tab1, tab2 = st.tabs(["Preview", "HTML Source"])
-                with tab1:
-                    st.markdown(article_content, unsafe_allow_html=True)
-                with tab2:
-                    st.code(article_content, language="html")
+                # Handling potential empty response
+                if response.text:
+                    article_content = response.text
+                    st.success("Generation Complete!")
+                    
+                    tab1, tab2 = st.tabs(["Preview", "HTML Source"])
+                    with tab1:
+                        st.markdown(article_content, unsafe_allow_html=True)
+                    with tab2:
+                        st.code(article_content, language="html")
+                else:
+                    st.error("Model returned an empty response. Please check your prompt or API limits.")
                     
         except Exception as e:
-            st.error(f"An error occurred: {e}")
+            # Check if it's a model name issue and provide feedback
+            st.error(f"Error: {e}")
+            st.write("Tip: If the error persists, check if your API Key is restricted to specific models in Google AI Studio.")

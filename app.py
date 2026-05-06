@@ -34,8 +34,8 @@ if st.button("Generate HTML Article"):
     else:
         try:
             with st.spinner("Gemini is crafting your content..."):
-                model = genai.GenerativeModel('gemini-1.5-flash')
-                prompt = f"""
+model = genai.GenerativeModel('gemini-1.5-flash-latest')
+prompt = f"""
                 Write a comprehensive, SEO-optimized English article.
                 - Title: {article_title}
                 - Keywords: {keywords}

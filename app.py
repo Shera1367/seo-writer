@@ -2,7 +2,7 @@ import streamlit as st
 import google.generativeai as genai
 
 # Page Config
-st.set_page_config(page_title="Professional SEO Content Writer", layout="wide")
+st.set_page_config(page_title="Professional SEO Content Engine", layout="wide")
 
 # Fixed API Key
 API_KEY = "AIzaSyA-qdNkgPPL31NkuOeHDyF5ducJRuD-0LU"
@@ -26,7 +26,7 @@ with col1:
 
 with col2:
     headings = st.text_area("Suggested Headings", placeholder="H2, H3 structures...")
-    extra_instructions = st.text_area("Extra Instructions", placeholder="e.g. Add a FAQ section or use specific local SEO terms...")
+    extra_instructions = st.text_area("Extra Instructions", placeholder="e.g. Add a FAQ section...")
 
 if st.button("Generate HTML Article"):
     if not article_title:
@@ -34,9 +34,11 @@ if st.button("Generate HTML Article"):
     else:
         try:
             with st.spinner("Gemini is crafting your content..."):
-model = genai.GenerativeModel('gemini-1.5-flash-latest')
-prompt = f"""
-                Write a comprehensive, SEO-optimized English article.
+                # تغییر نام مدل برای رفع ارور 404
+                model = genai.GenerativeModel('gemini-pro') 
+                
+                prompt = f"""
+                Write a complete, high-quality SEO article in English.
                 - Title: {article_title}
                 - Keywords: {keywords}
                 - Structure: {headings}
@@ -46,8 +48,8 @@ prompt = f"""
                 
                 Format Requirements:
                 1. Output MUST be in raw HTML format (using <h2>, <h3>, <p>, <ul>, <li>, <strong>).
-                2. DO NOT use markdown code blocks (no ```html).
-                3. Ensure the content is human-like and passes basic SEO checks.
+                2. DO NOT use markdown code blocks.
+                3. Ensure the content is human-like.
                 """
                 
                 response = model.generate_content(prompt)
@@ -55,15 +57,11 @@ prompt = f"""
                 
                 st.success("Generation Complete!")
                 
-                # Display Result
                 tab1, tab2 = st.tabs(["Preview", "HTML Source"])
-                
                 with tab1:
                     st.markdown(article_content, unsafe_allow_html=True)
-                
                 with tab2:
                     st.code(article_content, language="html")
-                    st.button("Copy to Clipboard", on_click=lambda: st.write("Code copied! (Manual copy required in some browsers)"))
                     
         except Exception as e:
             st.error(f"An error occurred: {e}")

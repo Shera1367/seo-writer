@@ -1,16 +1,12 @@
 import streamlit as st
-import google.generativeai as genai
-from google.generativeai.types import GenerationConfig
+import requests
+import json
 
 # Page Config
 st.set_page_config(page_title="Professional SEO Content Engine", layout="wide")
 
 # Fixed API Key
 API_KEY = "AIzaSyA-qdNkgPPL31NkuOeHDyF5ducJRuD-0LU"
-
-# FORCE STABLE VERSION
-os_environ = {"GOOGLE_API_USE_MTLS_ENDPOINT": "never"}
-genai.configure(api_key=API_KEY, transport='rest')
 
 st.title("🚀 Professional SEO Content Engine")
 st.info("This tool generates full English articles in ready-to-use HTML format.")
@@ -35,31 +31,33 @@ if st.button("Generate HTML Article"):
         st.error("Please enter the Article Title.")
     else:
         try:
-            with st.spinner("Crafting content..."):
-                # Using gemini-1.5-flash as the most reliable high-speed model
-                model = genai.GenerativeModel('gemini-1.5-flash')
+            with st.spinner("Directly connecting to Gemini..."):
+                # Direct REST API call to avoid 404/v1beta issues
+                url = f"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={API_KEY}"
                 
-                prompt = f"""Write a professional SEO article in English.
-                Title: {article_title}
-                Keywords: {keywords}
-                Structure: {headings}
-                Tone: {tone}
-                Target Length: {word_count} words.
-                Additional Notes: {extra_instructions}
+                payload = {
+                    "contents": [{
+                        "parts": [{
+                            "text": f"Write a professional SEO article in English.\nTitle: {article_title}\nKeywords: {keywords}\nStructure: {headings}\nTone: {tone}\nTarget Length: {word_count} words.\nInstructions: {extra_instructions}\n\nFormat: Return ONLY the content wrapped in HTML tags (h2, h3, p, ul, li, strong). No markdown blocks."
+                        }]
+                    }]
+                }
                 
-                IMPORTANT: Return ONLY the content wrapped in HTML tags (h2, h3, p, ul, li, strong). 
-                Do not use markdown code blocks (```html)."""
-                
-                response = model.generate_content(prompt)
-                
-                if response.text:
+                headers = {'Content-Type': 'application/json'}
+                response = requests.post(url, headers=headers, data=json.dumps(payload))
+                result = response.json()
+
+                if response.status_code == 200:
+                    article_text = result['candidates'][0]['content']['parts'][0]['text']
                     st.success("Generation Complete!")
+                    
                     tab1, tab2 = st.tabs(["Preview", "HTML Source"])
                     with tab1:
-                        st.markdown(response.text, unsafe_allow_html=True)
+                        st.markdown(article_text, unsafe_allow_html=True)
                     with tab2:
-                        st.code(response.text, language="html")
+                        st.code(article_text, language="html")
+                else:
+                    st.error(f"API Error: {result.get('error', {}).get('message', 'Unknown Error')}")
                 
         except Exception as e:
-            st.error(f"Technical Error: {e}")
-            st.info("Check if your API key from Google AI Studio is active and has 'Gemini API' enabled.")
+            st.error(f"System Error: {str(e)}")

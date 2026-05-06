@@ -1,12 +1,18 @@
 import streamlit as st
 import google.generativeai as genai
+import os
 
 # Page Config
 st.set_page_config(page_title="Professional SEO Content Engine", layout="wide")
 
 # Fixed API Key
 API_KEY = "AIzaSyA-qdNkgPPL31NkuOeHDyF5ducJRuD-0LU"
-genai.configure(api_key=API_KEY)
+
+# Configure SDK to use stable version
+try:
+    genai.configure(api_key=API_KEY)
+except Exception as e:
+    st.error(f"Configuration Error: {e}")
 
 st.title("🚀 Professional SEO Content Engine")
 st.info("This tool generates full English articles in ready-to-use HTML format.")
@@ -34,40 +40,38 @@ if st.button("Generate HTML Article"):
     else:
         try:
             with st.spinner("Gemini is crafting your content..."):
-                # Updated model selection to avoid 404
-                model = genai.GenerativeModel(model_name='gemini-1.5-flash') 
+                # Using the most stable model name string
+                model = genai.GenerativeModel('gemini-1.5-flash') 
                 
                 prompt = f"""
                 Write a complete, high-quality SEO article in English.
-                - Title: {article_title}
-                - Keywords: {keywords}
-                - Structure: {headings}
-                - Tone: {tone}
-                - Length: {word_count} words.
-                - Additional Instructions: {extra_instructions}
+                Title: {article_title}
+                Keywords: {keywords}
+                Structure: {headings}
+                Tone: {tone}
+                Length: {word_count} words.
+                Instructions: {extra_instructions}
                 
-                Format Requirements:
-                1. Output MUST be in raw HTML format (using <h2>, <h3>, <p>, <ul>, <li>, <strong>).
-                2. DO NOT use markdown code blocks or ```html tags in the output.
-                3. Ensure the content is human-like and professional.
+                Format: Output ONLY raw HTML (h2, h3, p, ul, li). No markdown blocks.
                 """
                 
+                # Use a more direct generation call
                 response = model.generate_content(prompt)
                 
-                # Handling potential empty response
-                if response.text:
-                    article_content = response.text
+                if response:
                     st.success("Generation Complete!")
-                    
                     tab1, tab2 = st.tabs(["Preview", "HTML Source"])
                     with tab1:
-                        st.markdown(article_content, unsafe_allow_html=True)
+                        st.markdown(response.text, unsafe_allow_html=True)
                     with tab2:
-                        st.code(article_content, language="html")
-                else:
-                    st.error("Model returned an empty response. Please check your prompt or API limits.")
-                    
+                        st.code(response.text, language="html")
+                
         except Exception as e:
-            # Check if it's a model name issue and provide feedback
-            st.error(f"Error: {e}")
-            st.write("Tip: If the error persists, check if your API Key is restricted to specific models in Google AI Studio.")
+            # If 1.5-flash fails, try the older stable pro as fallback
+            try:
+                model_fallback = genai.GenerativeModel('gemini-pro')
+                response = model_fallback.generate_content(prompt)
+                st.markdown(response.text, unsafe_allow_html=True)
+            except:
+                st.error(f"Critical Error: {e}")
+                st.write("Please ensure your API Key has access to Gemini models in Google AI Studio.")

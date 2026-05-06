@@ -5,11 +5,11 @@ import json
 # Page Config
 st.set_page_config(page_title="Professional SEO Content Engine", layout="wide")
 
-# --- PLACE YOUR NEW API KEY HERE ---
-API_KEY = "کلید_جدید_را_اینجا_بگذارید"
+# Your API Key from the screenshot
+API_KEY = "AIzaSyA-qdNkgPPL31NkuOeHDyF5ducJRuD-0LU"
 
 st.title("🚀 Professional SEO Content Engine")
-st.info("Using Gemini 1.5 Flash - Optimized for Free Tier Users")
+st.info("Stable Mode: Optimized for Free Tier API Keys")
 
 # Sidebar
 with st.sidebar:
@@ -20,22 +20,20 @@ with st.sidebar:
 # Main Input Fields
 col1, col2 = st.columns(2)
 with col1:
-    article_title = st.text_input("Article Title", placeholder="e.g. Benefits of Dental Implants")
-    keywords = st.text_area("Keywords", placeholder="SEO, Dental, Health...")
+    article_title = st.text_input("Article Title")
+    keywords = st.text_area("Keywords")
 with col2:
-    headings = st.text_area("Suggested Headings", placeholder="Introduction, Procedures, Cost...")
-    extra_instructions = st.text_area("Extra Instructions", placeholder="Add 3 FAQ questions at the end.")
+    headings = st.text_area("Suggested Headings")
+    extra_instructions = st.text_area("Extra Instructions")
 
 if st.button("Generate HTML Article"):
     if not article_title:
         st.error("Please enter the Article Title.")
-    elif "AIza" not in API_KEY:
-        st.error("Please update the API KEY in the code.")
     else:
         try:
-            with st.spinner("Writing..."):
-                # این آدرس دقیقاً برای مدل‌های رایگان بهینه شده است
-                url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={API_KEY}"
+            with st.spinner("Connecting to Gemini (Free Tier Mode)..."):
+                # استفاده از gemini-pro که برای اکانت‌های رایگان پایدارتر است
+                url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key={API_KEY}"
                 
                 payload = {
                     "contents": [{
@@ -59,7 +57,8 @@ if st.button("Generate HTML Article"):
                     with tab2:
                         st.code(article_text, language="html")
                 else:
-                    st.error(f"Error: {result.get('error', {}).get('message', 'Check API Status')}")
+                    st.error(f"API Error: {result.get('error', {}).get('message', 'Unknown Error')}")
+                    st.write("Tip: Your Free Tier key might need 'gemini-pro' instead of 'flash'.")
                 
         except Exception as e:
             st.error(f"System Error: {str(e)}")

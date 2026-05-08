@@ -200,6 +200,19 @@ if st.button("✨ GENERATE ELITE CONTENT"):
             """
             
             with st.spinner(f"⏳ Strategizing a DEEP-DIVE article for {business_name}... (This takes longer because it's generating a full guide)"):
+                response = client.chat.completions.create(
+                    model="gpt-4o",
+                    messages=[
+                        {"role": "system", "content": system_prompt},
+                        {"role": "user", "content": user_prompt}
+                    ],
+                    response_format={"type": "json_object"},
+                    temperature=0.7
+                )
+                st.session_state.generated_data = json.loads(response.choices[0].message.content)
+                st.success(f"Elite Content Strategy for {business_name} completed!")
+        except Exception as e:
+            st.error(f"System Error: {str(e)}")
 
 # Results Display
 if st.session_state.generated_data:

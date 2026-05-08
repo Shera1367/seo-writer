@@ -2,7 +2,7 @@ import streamlit as st
 from openai import OpenAI
 import time
 
-# تنظیمات پیشرفته صفحه
+# Advanced Page Configuration
 st.set_page_config(
     page_title="Professional AI SEO & GEO Writer",
     page_icon="🚀",
@@ -10,7 +10,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# استایل‌دهی سفارشی برای ظاهر حرفه‌ای
+# Custom Styling for Professional Look
 st.markdown("""
 <style>
     .main {
@@ -40,41 +40,47 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# بررسی وجود کلید API در Secrets
+# Check for API Key in Secrets
 try:
     API_KEY = st.secrets["OPENAI_API_KEY"]
 except KeyError:
-    st.error("خطا: کلید API در بخش Secrets تنظیم نشده است.")
+    st.error("Error: OPENAI_API_KEY not found in Streamlit Secrets.")
     st.stop()
 
-# تیتر و معرفی ابزار
+# Header and Introduction
 st.title("🚀 SEO & GEO Content Engine")
 st.markdown("---")
 
-# ستون‌بندی تنظیمات در سایدبار
+# Sidebar for Content Strategy
 with st.sidebar:
-    st.header("⚙️ استراتژی محتوا")
+    st.header("⚙️ Content Strategy")
     
     language = st.selectbox(
-        "زبان محتوا (Language)",
+        "Content Language",
         ["English", "Persian", "Spanish", "French", "German"],
         index=0
     )
 
+    industry = st.selectbox(
+        "Industry / Niche",
+        ["Legal", "Medical", "Travel", "Real Estate", "Technology", "Finance", "General/Lifestyle"],
+        index=0
+    )
+
     search_intent = st.selectbox(
-        "هدف جستجو (Search Intent)",
-        ["Informational (آموزشی)", "Transactional (خرید/خدمات)", "Navigational (برند)", "Commercial Investigation (مقایسه‌ای)"],
+        "Search Intent",
+        ["Informational", "Transactional", "Navigational", "Commercial Investigation"],
         index=0
     )
 
     tone = st.selectbox(
-        "لحن مقاله (Tone)",
+        "Tone of Voice",
         ["Professional", "Informative", "Casual", "Technical", "Authoritative", "Conversational"],
         index=0
     )
     
     word_count = st.select_slider(
-        "تعداد کلمات حدودی (Word Count)",
+        "Target Word Count",
         options=[300, 500, 800, 1000, 1500, 2000, 2500],
         value=1000
     )
@@ -85,49 +91,56 @@ with st.sidebar:
     use_citations = st.checkbox("GEO Optimization (Citations & Stats)", value=True)
     generate_meta = st.checkbox("Generate Meta Tags", value=True)
 
-# بخش ورودی‌های اصلی
+# Main Input Section
 col1, col2 = st.columns([1, 1])
 
 with col1:
-    article_title = st.text_input("عنوان مقاله (Article Title)", placeholder="e.g. Best Personal Injury Attorney in California")
-    keywords = st.text_area("کلمات کلیدی (Target Keywords)", placeholder="primary keyword, secondary keyword, LSI keywords...", help="با کاما جدا کنید.")
+    article_title = st.text_input("Article Title", placeholder="e.g. Best Personal Injury Attorney in California")
+    primary_keyword = st.text_input("Primary Keyword", placeholder="Main focus keyword...")
+    secondary_keywords = st.text_area("Secondary Keywords", placeholder="List keywords related to the topic...")
 
 with col2:
-    suggested_headings = st.text_area("ساختار پیشنهادی (Suggested Headings)", placeholder="Introduction\nKey Services\nWhy Choose Us\nConclusion")
-    extra_instructions = st.text_area("پیشنهادات اضافی و GEO (Extra Instructions)", placeholder="e.g. Include local Woodland Hills data, mention specific California laws...")
+    lsi_keywords = st.text_area("LSI Keywords", placeholder="Latent Semantic Indexing keywords...")
+    suggested_headings = st.text_area("Suggested Headings", placeholder="Introduction\nKey Services\nWhy Choose Us\nConclusion")
+    extra_instructions = st.text_area("Extra Instructions & GEO Data", placeholder="e.g. Include local Woodland Hills data, mention specific California laws...")
 
-# دکمه تولید محتوا
+# Generation Button
 if st.button("✨ GENERATE OPTIMIZED CONTENT"):
-    if not article_title or not keywords:
-        st.warning("لطفاً عنوان و کلمات کلیدی را وارد کنید.")
+    if not article_title or not primary_keyword:
+        st.warning("Please enter the Article Title and at least the Primary Keyword.")
     else:
         try:
             client = OpenAI(api_key=API_KEY)
             
-            # مهندسی پرامپت حرفه‌ای برای سئو و GEO
+            # Elite Prompt Engineering for SEO & GEO
             system_prompt = f"""
-            You are a world-class Digital Strategist specializing in SEO (Search Engine Optimization) and GEO (Generative Engine Optimization).
+            You are an elite SEO content strategist, content writer, and conversion copywriter.
+            You specialize in SEO (Search Engine Optimization) and GEO (Generative Engine Optimization).
             Your goal is to write content that ranks in Google AND gets cited by AI engines like Perplexity, Gemini, and ChatGPT.
+            Industry Expertise: {industry}.
             Language: {language}.
             """
             
             user_prompt = f"""
-            Task: Write a 100% unique, high-utility, and E-E-A-T compliant article.
+            Task: Write a 100% unique, high-utility, and E-E-A-T compliant article specifically for the {industry} industry.
             
             CORE DETAILS:
             - Language: {language}
             - Title: {article_title}
-            - Primary Keywords: {keywords}
+            - Primary Keyword: {primary_keyword}
+            - Secondary Keywords: {secondary_keywords}
+            - LSI Keywords: {lsi_keywords}
             - Search Intent: {search_intent}
             - Tone: {tone}
             - Target Length: {word_count} words
             
-            STRATEGIC GUIDELINES:
-            1. GEO OPTIMIZATION: Include authoritative citations, data-driven points, and expert-like quotes to make the content "citable" by AI engines.
-            2. LOCAL RELEVANCE: Integrate geographic context (GEO) naturally if mentioned in extra instructions.
-            3. INTENT ALIGNMENT: Structure the content specifically to satisfy a {search_intent} user query.
-            4. FAQ & TAKEAWAYS: {'Include a structured FAQ section' if use_faq else ''}.
-            5. UNIQUE VALUE: Avoid generic fluff. Provide specific insights, step-by-step guides, or technical details.
+            STRATEGIC SEO & GEO GUIDELINES:
+            1. KEYWORD INTEGRATION: Naturally use the Primary Keyword in the first paragraph and subheadings. Distribute Secondary and LSI keywords throughout the text.
+            2. GEO OPTIMIZATION: Include authoritative citations, data-driven points, and expert-like quotes to make the content "citable" by AI engines.
+            3. INDUSTRY CONTEXT: Apply specific knowledge and compliance standards for the {industry} niche.
+            4. INTENT ALIGNMENT: Structure the content specifically to satisfy {search_intent} queries.
+            5. FAQ: {'Include a structured FAQ section' if use_faq else ''}.
+            6. UNIQUE VALUE: Avoid generic fluff. Provide specific insights and technical details.
             
             TECHNICAL REQUIREMENTS:
             - Output ONLY raw HTML (h2, h3, p, ul, li, strong).
@@ -137,7 +150,7 @@ if st.button("✨ GENERATE OPTIMIZED CONTENT"):
             EXTRA INSTRUCTIONS: {extra_instructions}
             """
 
-            with st.spinner(f"⏳ در حال تولید محتوای {language} با رویکرد SEO & GEO..."):
+            with st.spinner(f"⏳ Generating {language} content for {industry} industry..."):
                 start_time = time.time()
                 
                 response = client.chat.completions.create(
@@ -153,10 +166,10 @@ if st.button("✨ GENERATE OPTIMIZED CONTENT"):
                 end_time = time.time()
                 duration = round(end_time - start_time, 1)
 
-            st.success(f"محتوا در {duration} ثانیه تولید شد!")
+            st.success(f"Content generated successfully in {duration} seconds!")
 
-            # پردازش و نمایش خروجی
-            tab1, tab2, tab3 = st.tabs(["👁️ Preview Content", "💻 HTML Code", "📊 SEO/GEO Analysis"])
+            # Results Display
+            tab1, tab2, tab3 = st.tabs(["👁️ Preview Content", "💻 HTML Code", "📊 Analysis"])
 
             with tab1:
                 st.markdown("### Article Preview")
@@ -176,14 +189,14 @@ if st.button("✨ GENERATE OPTIMIZED CONTENT"):
             with tab3:
                 word_actual = len(content.split())
                 st.write(f"**Actual Word Count:** {word_actual}")
-                st.write(f"**Language:** {language}")
+                st.write(f"**Industry Context:** {industry}")
                 st.write(f"**Intent Fulfillment:** {search_intent}")
                 st.progress(min(word_actual/word_count, 1.0))
-                st.info("نکته GEO: استفاده از آمار دقیق و اسامی خاص (مثل نام خیابان‌ها در کالیفرنیا یا نام قوانین خاص) احتمال دیده شدن شما در موتورهای جستجوی مبتنی بر هوش مصنوعی را افزایش می‌دهد.")
+                st.info("GEO Tip: Using precise statistics, entities, and specific names (like California street names or specific law codes) increases your chances of being cited by AI search engines.")
 
         except Exception as e:
-            st.error(f"خطای سیستمی: {str(e)}")
+            st.error(f"System Error: {str(e)}")
 
-# فوتر سایت
+# Footer
 st.markdown("---")
 st.markdown(f"<p style='text-align: center; color: grey;'>Advanced SEO & GEO Engine | Built for Sheragim | © {time.localtime().tm_year}</p>", unsafe_allow_html=True)

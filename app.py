@@ -70,7 +70,6 @@ if "research_data" not in st.session_state:
 if "generated_data" not in st.session_state:
     st.session_state.generated_data = None
 
-# API Key check
 try:
     API_KEY = st.secrets["OPENAI_API_KEY"]
 except KeyError:
@@ -85,8 +84,14 @@ st.markdown("""
         background-color: #28a745; color: white; font-weight: bold;
         border: none; box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     }
-    .stButton>button:hover { background-color: #218838; }
-    .research-box { background-color: #e3f2fd; padding: 15px; border-radius: 10px; border-left: 5px solid #2196f3; margin-bottom: 20px; }
+    .research-box { 
+        background-color: #ffffff; padding: 25px; border-radius: 12px; 
+        border: 1px solid #e0e0e0; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.02);
+    }
+    .keyword-pill {
+        display: inline-block; background: #e3f2fd; color: #1976d2;
+        padding: 4px 12px; border-radius: 20px; margin: 4px; font-size: 13px; font-weight: 500;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -107,7 +112,6 @@ with st.sidebar:
 
 tab_research, tab_generator = st.tabs(["🔍 Phase 1: Research & Structure", "✨ Phase 2: Elite Content Engine"])
 
-# --- PHASE 1: RESEARCH ---
 with tab_research:
     st.header("Keyword & Structure Discovery")
     seed_topic = st.text_input("Enter Seed Topic / Main Idea", placeholder="e.g. Dental Implants benefits")
@@ -119,27 +123,33 @@ with tab_research:
             try:
                 client = OpenAI(api_key=API_KEY)
                 res_prompt = f"""
-                You are a Senior SEO Researcher. Analyze the topic: "{seed_topic}" for the {industry} industry.
+                Analyze the topic: "{seed_topic}" for the {industry} industry.
                 Target Audience: {target_audience}.
                 
                 Generate:
                 1. 3 High-CTR Magnetic Headlines.
                 2. 1 Primary Keyword.
-                3. 5-7 Secondary Keywords.
-                4. 10 LSI Keywords.
-                5. A mandatory heading structure (H2, H3, H4) for a deep-dive article.
+                3. 5-7 Secondary Keywords (comma separated).
+                4. 10 LSI Keywords (comma separated).
+                5. A mandatory deep-dive heading structure (H2, H3, H4).
                 
                 Return ONLY a JSON object:
-                {{"headlines": [], "primary": "", "secondary": "", "lsi": "", "structure": ""}}
+                {{
+                    "headlines": ["Title 1", "Title 2", "Title 3"],
+                    "primary": "keyword",
+                    "secondary": "k1, k2, k3",
+                    "lsi": "l1, l2, l3",
+                    "structure_text": "H2: Section Name\\n  H3: Sub-section\\n    H4: Detail\\n"
+                }}
                 """
-                with st.spinner("⏳ Analyzing market and keywords..."):
+                with st.spinner("⏳ Analyzing market and building structure..."):
                     response = client.chat.completions.create(
                         model="gpt-4o",
                         messages=[{"role": "user", "content": res_prompt}],
                         response_format={"type": "json_object"}
                     )
                     st.session_state.research_data = json.loads(response.choices[0].message.content)
-                    st.success("Research Complete! You can now use this data in Phase 2.")
+                    st.success("Research Complete! Data is now ready in Phase 2.")
             except Exception as e:
                 st.error(f"Research Error: {e}")
 
@@ -147,29 +157,27 @@ with tab_research:
         res = st.session_state.research_data
         st.markdown("<div class='research-box'>", unsafe_allow_html=True)
         st.subheader("🎯 Research Results")
-        st.write("**Suggested Headlines (High CTR):**")
-        for h in res['headlines']: st.write(f"- {h}")
         
-        c1, c2, c3 = st.columns(3)
+        st.write("**Suggested Headlines (High CTR):**")
+        for h in res['headlines']: st.info(h)
+        
+        c1, c2 = st.columns(2)
         with c1: 
-            st.write("**Primary**")
+            st.write("**Primary Keyword**")
             st.code(res['primary'])
+            st.write("**Secondary Keywords**")
+            st.write(" ".join([f"<span class='keyword-pill'>{k.strip()}</span>" for k in res['secondary'].split(',')],), unsafe_allow_html=True)
         with c2: 
-            st.write("**Secondary**")
-            st.code(res['secondary'])
-        with c3: 
-            st.write("**LSI**")
-            st.code(res['lsi'])
+            st.write("**LSI Keywords**")
+            st.write(" ".join([f"<span class='keyword-pill'>{k.strip()}</span>" for k in res['lsi'].split(',')],), unsafe_allow_html=True)
             
-        st.write("**Recommended Heading Structure:**")
-        st.code(res['structure'])
+        st.write("**Recommended Heading Outline:**")
+        st.code(res['structure_text'])
         st.markdown("</div>", unsafe_allow_html=True)
 
-# --- PHASE 2: GENERATOR ---
 with tab_generator:
     st.header("Elite Content Generator")
     
-    # Auto-fill from research if available
     res = st.session_state.research_data or {}
     
     col1, col2 = st.columns(2)
@@ -180,15 +188,15 @@ with tab_generator:
         secondary_k = st.text_area("Secondary Keywords", value=res.get("secondary", "") if res else "")
     with col2:
         lsi_k = st.text_area("LSI Keywords", value=res.get("lsi", "") if res else "")
-        headings_k = st.text_area("Structure (H2-H4)", value=res.get("structure", "") if res else "", height=150)
-        extra_k = st.text_area("Extra/GEO Info", placeholder="Nearby highways, local laws...")
+        headings_k = st.text_area("Structure (H2-H4 Outline)", value=res.get("structure_text", "") if res else "", height=150)
+        extra_k = st.text_area("Extra/GEO Info", placeholder="Nearby landmarks, local laws, or specific citations...")
 
     gen_col1, gen_col2 = st.columns(2)
     with gen_col1:
         search_intent = st.selectbox("Intent", ["Informational", "Transactional", "Commercial"])
         tone = st.selectbox("Tone", ["Professional", "Authoritative", "Conversational"])
     with gen_col2:
-        word_count = st.select_slider("Word Count", [500, 1000, 1500, 2000, 2500], value=1000)
+        word_count = st.select_slider("Word Count Goal", [500, 1000, 1500, 2000, 2500], value=1000)
 
     if st.button("✨ GENERATE ELITE HUMANIZED CONTENT"):
         if not article_title or not primary_k:
@@ -196,29 +204,30 @@ with tab_generator:
         else:
             try:
                 client = OpenAI(api_key=API_KEY)
-                sys_prompt = f"Elite Investigative Journalist and Practitioner in {industry}. Despises robotic AI writing. Language: {language}."
+                sys_prompt = f"Elite Investigative Journalist and Practitioner in {industry}. You despise robotic AI writing. Content Language: {language}."
                 user_prompt = f"""
                 Write an ULTIMATE, human-grade deep-dive article for {business_name}.
-                Structure: H1 -> H2 -> H3 -> H4 hierarchy.
+                Structure: H1 -> H2 -> H3 -> H4 hierarchy as provided in the outline.
                 
-                HUMANIZATION RULES:
-                1. No AI clichés (delve, unleash, moreover).
-                2. Vary sentence length (Burstiness).
-                3. Use first-person expert perspective.
+                HUMANIZATION & QUALITY RULES:
+                1. No AI clichés (delve, unleash, moreover, in conclusion).
+                2. Vary sentence length significantly (Burstiness).
+                3. Use first-person expert perspective from {business_name}.
                 4. Include 1 famous authority quote in <blockquote>.
-                5. Use <strong> for emphasis and <u> for specific terms.
-                6. 2 External links to .gov or .edu.
-                7. 3 Real-talk FAQs.
+                5. Use <strong> for SEO emphasis and <u> for specific terms.
+                6. 2 External links to .gov or .edu sources (relevant to {industry}).
+                7. 3 Real-talk, non-generic FAQs.
                 
                 DATA:
                 Title: {article_title}
                 Primary: {primary_k} | Secondary: {secondary_k} | LSI: {lsi_k}
-                Intent: {search_intent} | Tone: {tone} | Words: {word_count}
-                GEO/Extra: {extra_k}
+                Outline: {headings_k}
+                Intent: {search_intent} | Words: {word_count}
+                GEO Context: {extra_k}
                 
                 Return JSON: {{"meta_title": "", "meta_description": "", "article_html": ""}}
                 """
-                with st.spinner("⏳ Synthesizing elite content..."):
+                with st.spinner("⏳ Synthesizing elite content... This takes about 60-90 seconds for maximum depth."):
                     response = client.chat.completions.create(
                         model="gpt-4o",
                         messages=[{"role": "system", "content": sys_prompt}, {"role": "user", "content": user_prompt}],
@@ -230,31 +239,31 @@ with tab_generator:
             except Exception as e:
                 st.error(f"Generation Error: {e}")
 
-    if st.session_state.generated_data:
-        data = st.session_state.generated_data
-        st.divider()
-        st.subheader("📋 Final Deliverables")
-        
-        m1, m2 = st.columns(2)
-        with m1:
-            st.write("**Meta Title**")
-            copy_to_clipboard(data.get("meta_title", ""), key_suffix="mt", is_html=True)
-            st.text_input("Edit Meta Title", value=data.get("meta_title", ""), label_visibility="collapsed")
-        with m2:
-            st.write("**Meta Description**")
-            copy_to_clipboard(data.get("meta_description", ""), key_suffix="md", is_html=True)
-            st.text_area("Edit Meta Description", value=data.get("meta_description", ""), label_visibility="collapsed")
+if st.session_state.generated_data:
+    data = st.session_state.generated_data
+    st.divider()
+    st.subheader("📋 Final Deliverables")
+    
+    m1, m2 = st.columns(2)
+    with m1:
+        st.write("**Meta Title**")
+        copy_to_clipboard(data.get("meta_title", ""), key_suffix="mt", is_html=True)
+        st.text_input("Edit Meta Title", value=data.get("meta_title", ""), label_visibility="collapsed")
+    with m2:
+        st.write("**Meta Description**")
+        copy_to_clipboard(data.get("meta_description", ""), key_suffix="md", is_html=True)
+        st.text_area("Edit Meta Description", value=data.get("meta_description", ""), height=68, label_visibility="collapsed")
 
-        st.write("**Content Body**")
-        c1, c2, _ = st.columns([1, 1, 3])
-        with c1: copy_to_clipboard(data.get("article_html", ""), "💾 Copy HTML", key_suffix="html", is_html=True)
-        with c2: copy_to_clipboard(data.get("article_html", ""), "👤 Copy Rich Text", key_suffix="rich", is_html=False)
-        
-        t_prev, t_code = st.tabs(["👁️ Preview", "💻 HTML Code"])
-        with t_prev: st.markdown(data.get("article_html", ""), unsafe_allow_html=True)
-        with t_code: st.text_area("Source", value=data.get("article_html", ""), height=400)
-        
-        actual_words = len(strip_html(data.get("article_html", "")).split())
-        st.markdown(f"**Audit:** Word Count: `{actual_words}` | Brand: `{business_name}` | SEO: `Human-Grade`")
+    st.write("**Content Body**")
+    c1, c2, _ = st.columns([1, 1, 3])
+    with c1: copy_to_clipboard(data.get("article_html", ""), "💾 Copy HTML Code", key_suffix="html", is_html=True)
+    with c2: copy_to_clipboard(data.get("article_html", ""), "👤 Copy Formatted Text", key_suffix="rich", is_html=False)
+    
+    t_prev, t_code = st.tabs(["👁️ Rendered Preview", "💻 Raw HTML Source"])
+    with t_prev: st.markdown(data.get("article_html", ""), unsafe_allow_html=True)
+    with t_code: st.text_area("Source", value=data.get("article_html", ""), height=400)
+    
+    actual_words = len(strip_html(data.get("article_html", "")).split())
+    st.markdown(f"**Audit:** Actual Word Count: `{actual_words}` | Brand: `{business_name}` | SEO: `Human-Grade Verified`")
 
-st.markdown("<p style='text-align: center; color: grey; font-size: 11px; margin-top: 50px;'>Sheragim.biz Elite Engine | © 2026</p>", unsafe_allow_html=True)
+st.markdown("<p style='text-align: center; color: grey; font-size: 11px; margin-top: 50px;'>Sheragim.biz Elite SEO Engine | Powered by GPT-4o | © 2026</p>", unsafe_allow_html=True)

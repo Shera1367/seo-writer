@@ -13,42 +13,73 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Helper to strip HTML tags for plain text copying
+# Helper to strip HTML tags for plain text word counting
 def strip_html(html_string):
     clean = re.compile('<.*?>')
     return re.sub(clean, '', html_string)
 
-# JavaScript for Copy to Clipboard Functionality
-def copy_to_clipboard(text, button_label="Copy", key_suffix=""):
-    # Escaping backticks and special chars for JS string
-    safe_text = text.replace('\\', '\\\\').replace('`', '\\`').replace('$', '\\$')
-    html_code = f"""
+# JavaScript for Copy to Clipboard Functionality (Supports Rich Text)
+def copy_to_clipboard(content, button_label="Copy", key_suffix="", is_html=False):
+    # For Rich Text copying, we use a hidden div and select its content
+    # For HTML code copying, we use a textarea
+    safe_content = content.replace('\\', '\\\\').replace('`', '\\`').replace('$', '\\$').replace('"', '\\"')
+    
+    if is_html:
+        # Standard copy for code/plain text
+        js_code = f"""
+        var textArea = document.createElement("textarea");
+        textArea.value = `{safe_content}`;
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand("copy");
+        document.body.removeChild(textArea);
+        """
+    else:
+        # Rich Text copy to preserve headings/formatting
+        js_code = f"""
+        var container = document.createElement("div");
+        container.innerHTML = `{safe_content}`;
+        container.style.position = "fixed";
+        container.style.pointerEvents = "none";
+        container.style.opacity = 0;
+        document.body.appendChild(container);
+        window.getSelection().removeAllRanges();
+        var range = document.createRange();
+        range.selectNode(container);
+        window.getSelection().addRange(range);
+        document.execCommand("copy");
+        window.getSelection().removeAllRanges();
+        document.body.removeChild(container);
+        """
+
+    html_button = f"""
     <button id="copyBtn{key_suffix}" style="
         background-color: #007bff; 
         color: white; 
         border: none; 
-        padding: 5px 10px; 
-        border-radius: 5px; 
+        padding: 5px 12px; 
+        border-radius: 6px; 
         cursor: pointer;
-        font-size: 12px;
-        margin-bottom: 5px;
+        font-size: 13px;
+        font-weight: 500;
+        margin-bottom: 8px;
+        transition: background 0.2s;
         ">
         {button_label}
     </button>
-    <textarea id="copyText{key_suffix}" style="display:none;">{safe_text}</textarea>
     <script>
     document.getElementById("copyBtn{key_suffix}").onclick = function() {{
-        var copyText = document.getElementById("copyText{key_suffix}");
-        copyText.style.display = "block";
-        copyText.select();
-        document.execCommand("copy");
-        copyText.style.display = "none";
+        {js_code}
         this.innerHTML = "Copied!";
-        setTimeout(() => {{ this.innerHTML = "{button_label}"; }}, 2000);
+        this.style.backgroundColor = "#28a745";
+        setTimeout(() => {{ 
+            this.innerHTML = "{button_label}"; 
+            this.style.backgroundColor = "#007bff";
+        }}, 2000);
     }}
     </script>
     """
-    components.html(html_code, height=45)
+    components.html(html_button, height=45)
 
 # Custom Styling
 st.markdown("""
@@ -57,11 +88,12 @@ st.markdown("""
     .stButton>button {
         width: 100%;
         border-radius: 8px;
-        height: 3em;
+        height: 3.2em;
         background-color: #28a745;
         color: white;
         font-weight: bold;
         border: none;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     }
     .stButton>button:hover { background-color: #218838; }
 </style>
@@ -178,21 +210,21 @@ if st.session_state.generated_data:
     m_col1, m_col2 = st.columns(2)
     with m_col1:
         st.write("**Meta Title**")
-        copy_to_clipboard(data.get("meta_title", ""), key_suffix="meta_t")
+        copy_to_clipboard(data.get("meta_title", ""), key_suffix="meta_t", is_html=True)
         st.text_input("Edit Title", value=data.get("meta_title", ""), key="mt_edit", label_visibility="collapsed")
     with m_col2:
         st.write("**Meta Description**")
-        copy_to_clipboard(data.get("meta_description", ""), key_suffix="meta_d")
+        copy_to_clipboard(data.get("meta_description", ""), key_suffix="meta_d", is_html=True)
         st.text_area("Edit Description", value=data.get("meta_description", ""), height=68, key="md_edit", label_visibility="collapsed")
 
     # Article Content Section
     st.write("**Article Body**")
     c1, c2, _ = st.columns([1, 1, 4])
     with c1:
-        copy_to_clipboard(data.get("article_html", ""), "Copy Full HTML", key_suffix="body_html")
+        copy_to_clipboard(data.get("article_html", ""), "Copy Code (HTML)", key_suffix="body_html", is_html=True)
     with c2:
-        plain_text = strip_html(data.get("article_html", ""))
-        copy_to_clipboard(plain_text, "Copy Plain Text", key_suffix="body_text")
+        # Copy as Rich Text to preserve formatting/headings
+        copy_to_clipboard(data.get("article_html", ""), "Copy Formatted Text", key_suffix="body_rich", is_html=False)
     
     tab_preview, tab_html = st.tabs(["👁️ Preview Content", "💻 HTML Code Source"])
     

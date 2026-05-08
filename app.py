@@ -87,7 +87,7 @@ with st.sidebar:
     
     st.markdown("---")
     st.markdown("### SEO & GEO Checklist")
-    use_faq = st.checkbox("Include FAQ (SEO)", value=True)
+    use_faq = st.checkbox("Include 3 Optimized FAQs", value=True)
     use_citations = st.checkbox("GEO Optimization (Citations & Stats)", value=True)
     generate_meta = st.checkbox("Generate Meta Tags", value=True)
 
@@ -96,6 +96,7 @@ col1, col2 = st.columns([1, 1])
 
 with col1:
     article_title = st.text_input("Article Title", placeholder="e.g. Best Personal Injury Attorney in California")
+    target_audience = st.text_input("Target Audience", placeholder="e.g. Accident victims, Small business owners, Seniors...")
     primary_keyword = st.text_input("Primary Keyword", placeholder="Main focus keyword...")
     secondary_keywords = st.text_area("Secondary Keywords", placeholder="Separate with commas or Enter...")
 
@@ -115,44 +116,53 @@ if st.button("✨ GENERATE OPTIMIZED CONTENT"):
             # Elite Prompt Engineering for SEO & GEO
             system_prompt = f"""
             You are an elite SEO content strategist, content writer, and conversion copywriter.
-            You specialize in SEO (Search Engine Optimization) and GEO (Generative Engine Optimization).
-            Your goal is to write content that ranks in Google AND gets cited by AI engines like Perplexity, Gemini, and ChatGPT.
-            Industry Expertise: {industry}.
-            Language: {language}.
+            You specialize in creating in-depth, highly educational, and structured SEO articles for the {industry} industry.
+            Your goal is to fully satisfy search intent and go deeper than competitors by explaining the "why" and "how" of topics, not just providing definitions.
+            You must write in {language}.
             """
             
             user_prompt = f"""
-            Task: Write a 100% unique, high-utility, and E-E-A-T compliant article specifically for the {industry} industry.
+            Task: Write a 100% unique, authoritative, and E-E-A-T compliant article.
             
-            CORE DETAILS:
-            - Language: {language}
-            - Main Title (H1): {article_title}
+            OBJECTIVE:
+            1. Satisfy {search_intent} intent perfectly.
+            2. Use a clear H1, H2, and H3 hierarchy.
+            3. Include practical insights, examples, and actionable advice for {target_audience}.
+            4. Build trust and authority throughout the content.
+            5. AVOID em dashes (—) entirely.
+            6. AVOID fluff, filler, and vague generalizations.
+            7. Use short paragraphs for maximum readability.
+            
+            STRUCTURE REQUIREMENTS:
+            - H1: {article_title} (Must include the primary keyword naturally and be compelling).
+            - Introduction (150 to 200 words): Hook the reader emotionally or logically and clearly define the problem.
+            - Body Content: Dive deep into details. Explain the mechanics behind the topic.
+            - FAQ: {'Include 3 highly optimized FAQs at the end' if use_faq else ''}.
+            - Conclusion & CTA: End with a strong, persuasive Call-to-Action tailored to {target_audience}.
+            
+            CORE DATA:
             - Primary Keyword: {primary_keyword}
             - Secondary Keywords: {secondary_keywords}
             - LSI Keywords: {lsi_keywords}
             - Search Intent: {search_intent}
             - Tone: {tone}
-            - Target Length: {word_count} words
+            - Word Count: {word_count}
             
-            STRATEGIC SEO & GEO GUIDELINES:
-            1. KEYWORD INTEGRATION: Naturally use the Primary Keyword in the first paragraph and subheadings. Distribute Secondary and LSI keywords throughout the text.
-            2. GEO OPTIMIZATION: Include authoritative citations, data-driven points, and expert-like quotes to make the content "citable" by AI engines.
-            3. INDUSTRY CONTEXT: Apply specific knowledge and compliance standards for the {industry} niche.
-            4. INTENT ALIGNMENT: Structure the content specifically to satisfy {search_intent} queries.
-            5. FAQ: {'Include a structured FAQ section' if use_faq else ''}.
-            6. UNIQUE VALUE: Avoid generic fluff. Provide specific insights and technical details.
-            
-            TECHNICAL REQUIREMENTS & HIERARCHY:
-            - The Main Title MUST be wrapped in an <h1> tag.
-            - All subsequent subheadings MUST follow a logical hierarchy using <h2> and <h3> tags.
+            TECHNICAL REQUIREMENTS:
             - Output ONLY raw HTML (h1, h2, h3, p, ul, li, strong).
             - No markdown code blocks.
-            - If 'Generate Meta Data' is checked, include <meta-title> and <meta-description> at the very beginning.
+            - If 'Generate Meta Data' is checked, include <meta-title> and <meta-description> at the beginning.
             
-            EXTRA INSTRUCTIONS: {extra_instructions}
+            FINAL QUALITY CHECK & HUMANIZATION:
+            After writing the full article, perform a self-review of the content based on Quality, User Experience (UX), SEO, and GEO standards. 
+            Humanize the tone and style to ensure it sounds like a real expert author with professional experience in the {industry} field. 
+            Eliminate AI-typical patterns, predictable sentence structures, or generic filler. 
+            The final result must feel authentic, engaging, and indistinguishable from professional human-written content.
+
+            GEO & EXTRA: {extra_instructions}
             """
 
-            with st.spinner(f"⏳ Generating {language} content for {industry} industry..."):
+            with st.spinner(f"⏳ Strategizing and writing your elite {industry} content..."):
                 start_time = time.time()
                 
                 response = client.chat.completions.create(
@@ -168,7 +178,7 @@ if st.button("✨ GENERATE OPTIMIZED CONTENT"):
                 end_time = time.time()
                 duration = round(end_time - start_time, 1)
 
-            st.success(f"Content generated successfully in {duration} seconds!")
+            st.success(f"Professional Content generated in {duration} seconds!")
 
             # Results Display
             tab1, tab2, tab3 = st.tabs(["👁️ Preview Content", "💻 HTML Code", "📊 Analysis"])
@@ -191,14 +201,15 @@ if st.button("✨ GENERATE OPTIMIZED CONTENT"):
             with tab3:
                 word_actual = len(content.split())
                 st.write(f"**Actual Word Count:** {word_actual}")
-                st.write(f"**Industry Context:** {industry}")
-                st.write(f"**Intent Fulfillment:** {search_intent}")
+                st.write(f"**Industry:** {industry}")
+                st.write(f"**Target Audience:** {target_audience}")
+                st.write(f"**Search Intent:** {search_intent}")
                 st.progress(min(word_actual/word_count, 1.0))
-                st.info("GEO Tip: Using precise statistics, entities, and specific names (like California street names or specific law codes) increases your chances of being cited by AI search engines.")
+                st.info("Elite Content Tip: By avoiding generalizations and explaining the 'why', you are signaling much higher E-E-A-T to search engines.")
 
         except Exception as e:
             st.error(f"System Error: {str(e)}")
 
 # Footer
 st.markdown("---")
-st.markdown(f"<p style='text-align: center; color: grey;'>Advanced SEO & GEO Engine | Built for Sheragim | © {time.localtime().tm_year}</p>", unsafe_allow_html=True)
+st.markdown(f"<p style='text-align: center; color: grey;'>Elite SEO & GEO Engine | Built for Sheragim | © {time.localtime().tm_year}</p>", unsafe_allow_html=True)

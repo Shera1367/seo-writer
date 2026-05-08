@@ -97,10 +97,10 @@ col1, col2 = st.columns([1, 1])
 with col1:
     article_title = st.text_input("Article Title", placeholder="e.g. Best Personal Injury Attorney in California")
     primary_keyword = st.text_input("Primary Keyword", placeholder="Main focus keyword...")
-    secondary_keywords = st.text_area("Secondary Keywords", placeholder="List keywords related to the topic...")
+    secondary_keywords = st.text_area("Secondary Keywords", placeholder="Separate with commas or Enter...")
 
 with col2:
-    lsi_keywords = st.text_area("LSI Keywords", placeholder="Latent Semantic Indexing keywords...")
+    lsi_keywords = st.text_area("LSI Keywords", placeholder="Separate with commas or Enter...")
     suggested_headings = st.text_area("Suggested Headings", placeholder="Introduction\nKey Services\nWhy Choose Us\nConclusion")
     extra_instructions = st.text_area("Extra Instructions & GEO Data", placeholder="e.g. Include local Woodland Hills data, mention specific California laws...")
 
@@ -126,7 +126,7 @@ if st.button("✨ GENERATE OPTIMIZED CONTENT"):
             
             CORE DETAILS:
             - Language: {language}
-            - Title: {article_title}
+            - Main Title (H1): {article_title}
             - Primary Keyword: {primary_keyword}
             - Secondary Keywords: {secondary_keywords}
             - LSI Keywords: {lsi_keywords}
@@ -142,8 +142,10 @@ if st.button("✨ GENERATE OPTIMIZED CONTENT"):
             5. FAQ: {'Include a structured FAQ section' if use_faq else ''}.
             6. UNIQUE VALUE: Avoid generic fluff. Provide specific insights and technical details.
             
-            TECHNICAL REQUIREMENTS:
-            - Output ONLY raw HTML (h2, h3, p, ul, li, strong).
+            TECHNICAL REQUIREMENTS & HIERARCHY:
+            - The Main Title MUST be wrapped in an <h1> tag.
+            - All subsequent subheadings MUST follow a logical hierarchy using <h2> and <h3> tags.
+            - Output ONLY raw HTML (h1, h2, h3, p, ul, li, strong).
             - No markdown code blocks.
             - If 'Generate Meta Data' is checked, include <meta-title> and <meta-description> at the very beginning.
             

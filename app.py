@@ -168,6 +168,7 @@ if st.button("✨ GENERATE ELITE CONTENT"):
             - LSI Keywords: {lsi_keywords} (Use for semantic richness).
             - Search Intent: {search_intent} (Satisfy this intent fully).
             - GEO Optimization: Include authoritative citations, stats, and data points.
+            - External Linking: Include exactly 2 outbound links to highly authoritative sources (e.g., .gov, .edu, or reputable non-profit organizations) that are strictly relevant to the topic. These MUST NOT be commercial competitors.
             
             AUDIENCE & STRUCTURE:
             - Target Audience: {target_audience}.

@@ -3,6 +3,7 @@ from openai import OpenAI
 import time
 import json
 import streamlit.components.v1 as components
+import re
 
 # Advanced Page Configuration
 st.set_page_config(
@@ -12,11 +13,17 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
+# Helper to strip HTML tags for plain text copying
+def strip_html(html_string):
+    clean = re.compile('<.*?>')
+    return re.sub(clean, '', html_string)
+
 # JavaScript for Copy to Clipboard Functionality
-def copy_to_clipboard(text, button_label="Copy"):
-    # Using document.execCommand('copy') as per instructions for iframe compatibility
+def copy_to_clipboard(text, button_label="Copy", key_suffix=""):
+    # Escaping backticks and special chars for JS string
+    safe_text = text.replace('\\', '\\\\').replace('`', '\\`').replace('$', '\\$')
     html_code = f"""
-    <button id="copyBtn" style="
+    <button id="copyBtn{key_suffix}" style="
         background-color: #007bff; 
         color: white; 
         border: none; 
@@ -28,10 +35,10 @@ def copy_to_clipboard(text, button_label="Copy"):
         ">
         {button_label}
     </button>
-    <textarea id="copyText" style="display:none;">{text}</textarea>
+    <textarea id="copyText{key_suffix}" style="display:none;">{safe_text}</textarea>
     <script>
-    document.getElementById("copyBtn").onclick = function() {{
-        var copyText = document.getElementById("copyText");
+    document.getElementById("copyBtn{key_suffix}").onclick = function() {{
+        var copyText = document.getElementById("copyText{key_suffix}");
         copyText.style.display = "block";
         copyText.select();
         document.execCommand("copy");
@@ -78,9 +85,9 @@ st.markdown("---")
 with st.sidebar:
     st.header("⚙️ Content Strategy")
     language = st.selectbox("Language", ["English", "Persian", "Spanish", "French", "German"])
-    industry = st.selectbox("Industry", ["Legal", "Medical", "Travel", "Real Estate", "Technology", "Finance"])
+    industry = st.selectbox("Industry", ["Legal", "Medical", "Travel", "Real Estate", "Technology", "Finance", "E-commerce"])
     search_intent = st.selectbox("Search Intent", ["Informational", "Transactional", "Navigational", "Commercial"])
-    tone = st.selectbox("Tone", ["Professional", "Informative", "Casual", "Technical", "Authoritative"])
+    tone = st.selectbox("Tone", ["Professional", "Informative", "Casual", "Technical", "Authoritative", "Conversational"])
     word_count = st.select_slider("Target Words", options=[300, 500, 800, 1000, 1500, 2000, 2500], value=1000)
     
     if st.button("🗑️ Clear Results", type="secondary"):
@@ -91,37 +98,65 @@ with st.sidebar:
 col1, col2 = st.columns([1, 1])
 with col1:
     article_title = st.text_input("Article Title", placeholder="Main Headline (H1)")
-    target_audience = st.text_input("Target Audience", placeholder="Who are we writing for?")
+    business_name = st.text_input("Business/Brand Name", placeholder="e.g. Deldar Legal")
+    target_audience = st.text_input("Target Audience", placeholder="e.g. Accident victims in CA")
     primary_keyword = st.text_input("Primary Keyword")
-    secondary_keywords = st.text_area("Secondary Keywords", placeholder="Comma separated...")
+    secondary_keywords = st.text_area("Secondary Keywords", placeholder="Separate with commas or Enter...")
 with col2:
-    lsi_keywords = st.text_area("LSI Keywords", placeholder="Comma separated...")
-    suggested_headings = st.text_area("Suggested Headings")
-    extra_instructions = st.text_area("Extra Instructions & GEO Data")
+    lsi_keywords = st.text_area("LSI Keywords", placeholder="Contextual synonyms...")
+    suggested_headings = st.text_area("Suggested Headings", placeholder="Introduction\nSection 1\nSection 2\nConclusion")
+    extra_instructions = st.text_area("Extra Instructions & GEO Data", placeholder="Include local data, citations, or specific stats...")
 
 # Generation Logic
 if st.button("✨ GENERATE ELITE CONTENT"):
-    if not article_title or not primary_keyword:
-        st.warning("Please fill required fields.")
+    if not article_title or not primary_keyword or not business_name:
+        st.warning("Please fill required fields (Title, Brand, and Primary Keyword).")
     else:
         try:
             client = OpenAI(api_key=API_KEY)
-            system_prompt = f"Elite SEO/GEO strategist and conversion writer. Industry: {industry}. Language: {language}."
-            user_prompt = f"""
-            Write a 100% unique, authoritative, E-E-A-T article for {industry}.
-            H1: {article_title}. Audience: {target_audience}. 
-            Intent: {search_intent}. Tone: {tone}. Length: {word_count}.
-            Include 3 FAQs, GEO Optimization (citations/stats), no em-dashes, short paragraphs.
-            Humanize content perfectly.
             
-            Return JSON: 
+            # Elite System Persona
+            system_prompt = f"You are an elite SEO content strategist, content writer, and conversion copywriter. Expert in {industry}. Language: {language}."
+            
+            # Comprehensive User Prompt linking all fields
+            user_prompt = f"""
+            Task: Write an elite, 100% unique, and E-E-A-T compliant SEO article.
+            
+            BRAND CONTEXT:
+            - Business Name: {business_name} (Use this brand name naturally throughout the article to build authority).
+            - Industry: {industry}.
+            
+            HEADLINE OPTIMIZATION:
+            - Current Title: "{article_title}". 
+            - Action: Transform this into a magnetic, high-CTR H1 headline using power words while keeping the Primary Keyword integrated.
+            
+            SEO & GEO STRATEGY:
+            - Primary Keyword: {primary_keyword} (Focus).
+            - Secondary Keywords: {secondary_keywords} (Integrate naturally).
+            - LSI Keywords: {lsi_keywords} (Use for semantic richness).
+            - Search Intent: {search_intent} (Satisfy this intent fully).
+            - GEO Optimization: Include authoritative citations, stats, and data points.
+            
+            AUDIENCE & STRUCTURE:
+            - Target Audience: {target_audience}.
+            - Tone: {tone}.
+            - Structure: Follow this outline if provided: {suggested_headings}.
+            - Word Count: {word_count}.
+            - Introduction (150-200 words): Hook {target_audience} emotionally/logically.
+            - Body: Explain the "Why" and "How". No em-dashes (—). Short paragraphs.
+            - FAQ: Include 3 optimized FAQs.
+            - CTA: A strong, persuasive closing for {business_name}.
+            
+            FINAL REVIEW:
+            Humanize the content. Review for UX, SEO, and GEO standards.
+            
+            Return ONLY a valid JSON object: 
             {{"meta_title": "...", "meta_description": "...", "article_html": "..."}}
             
-            Keywords: {primary_keyword}, {secondary_keywords}, {lsi_keywords}.
-            Extra: {extra_instructions}
+            Extra Context: {extra_instructions}
             """
             
-            with st.spinner("⏳ Strategizing and Writing..."):
+            with st.spinner(f"⏳ Strategizing and Writing for {business_name}..."):
                 response = client.chat.completions.create(
                     model="gpt-4o",
                     messages=[{"role": "system", "content": system_prompt}, {"role": "user", "content": user_prompt}],
@@ -129,30 +164,35 @@ if st.button("✨ GENERATE ELITE CONTENT"):
                     temperature=0.7
                 )
                 st.session_state.generated_data = json.loads(response.choices[0].message.content)
-                st.success("Content Strategy Applied Successfully!")
+                st.success(f"Strategy applied for {business_name}!")
         except Exception as e:
             st.error(f"Error: {str(e)}")
 
-# Results Display (Persistent via Session State)
+# Results Display
 if st.session_state.generated_data:
     data = st.session_state.generated_data
     st.markdown("---")
-    st.header("📋 Generated Strategy & Content")
+    st.header(f"📋 Content for {business_name}")
     
     # Meta Info Row
     m_col1, m_col2 = st.columns(2)
     with m_col1:
         st.write("**Meta Title**")
-        copy_to_clipboard(data.get("meta_title", ""))
+        copy_to_clipboard(data.get("meta_title", ""), key_suffix="meta_t")
         st.text_input("Edit Title", value=data.get("meta_title", ""), key="mt_edit", label_visibility="collapsed")
     with m_col2:
         st.write("**Meta Description**")
-        copy_to_clipboard(data.get("meta_description", ""))
+        copy_to_clipboard(data.get("meta_description", ""), key_suffix="meta_d")
         st.text_area("Edit Description", value=data.get("meta_description", ""), height=68, key="md_edit", label_visibility="collapsed")
 
     # Article Content Section
     st.write("**Article Body**")
-    copy_to_clipboard(data.get("article_html", ""), "Copy Full HTML")
+    c1, c2, _ = st.columns([1, 1, 4])
+    with c1:
+        copy_to_clipboard(data.get("article_html", ""), "Copy Full HTML", key_suffix="body_html")
+    with c2:
+        plain_text = strip_html(data.get("article_html", ""))
+        copy_to_clipboard(plain_text, "Copy Plain Text", key_suffix="body_text")
     
     tab_preview, tab_html = st.tabs(["👁️ Preview Content", "💻 HTML Code Source"])
     
@@ -167,3 +207,11 @@ if st.session_state.generated_data:
             file_name=f"{article_title.lower().replace(' ', '_')}.html",
             mime="text/html"
         )
+    
+    # Footer Stats
+    actual_words = len(strip_html(data.get("article_html", "")).split())
+    st.markdown("---")
+    st.markdown(f"**Final Audit:** Word Count: `{actual_words}` | Brand: `{business_name}` | Intent: `{search_intent}`")
+
+# Footer
+st.markdown("<p style='text-align: center; color: grey; font-size: 12px; margin-top: 50px;'>Elite SEO & GEO Engine | Built for Professional Content Teams | © 2026</p>", unsafe_allow_html=True)

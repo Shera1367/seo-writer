@@ -18,14 +18,10 @@ def strip_html(html_string):
     clean = re.compile('<.*?>')
     return re.sub(clean, '', html_string)
 
-# JavaScript for Copy to Clipboard Functionality (Supports Rich Text)
 def copy_to_clipboard(content, button_label="Copy", key_suffix="", is_html=False):
-    # For Rich Text copying, we use a hidden div and select its content
-    # For HTML code copying, we use a textarea
     safe_content = content.replace('\\', '\\\\').replace('`', '\\`').replace('$', '\\$').replace('"', '\\"')
     
     if is_html:
-        # Standard copy for code/plain text
         js_code = f"""
         var textArea = document.createElement("textarea");
         textArea.value = `{safe_content}`;
@@ -35,7 +31,6 @@ def copy_to_clipboard(content, button_label="Copy", key_suffix="", is_html=False
         document.body.removeChild(textArea);
         """
     else:
-        # Rich Text copy to preserve headings/formatting
         js_code = f"""
         var container = document.createElement("div");
         container.innerHTML = `{safe_content}`;
@@ -54,16 +49,9 @@ def copy_to_clipboard(content, button_label="Copy", key_suffix="", is_html=False
 
     html_button = f"""
     <button id="copyBtn{key_suffix}" style="
-        background-color: #007bff; 
-        color: white; 
-        border: none; 
-        padding: 5px 12px; 
-        border-radius: 6px; 
-        cursor: pointer;
-        font-size: 13px;
-        font-weight: 500;
-        margin-bottom: 8px;
-        transition: background 0.2s;
+        background-color: #007bff; color: white; border: none; padding: 5px 12px; 
+        border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 500;
+        margin-bottom: 8px; transition: background 0.2s;
         ">
         {button_label}
     </button>
@@ -81,29 +69,23 @@ def copy_to_clipboard(content, button_label="Copy", key_suffix="", is_html=False
     """
     components.html(html_button, height=45)
 
-# Custom Styling
 st.markdown("""
 <style>
     .main { background-color: #f8f9fa; }
     .stButton>button {
-        width: 100%;
-        border-radius: 8px;
-        height: 3.2em;
-        background-color: #28a745;
-        color: white;
-        font-weight: bold;
-        border: none;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        width: 100%; border-radius: 8px; height: 3.2em;
+        background-color: #28a745; color: white; font-weight: bold;
+        border: none; box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     }
     .stButton>button:hover { background-color: #218838; }
 </style>
 """, unsafe_allow_html=True)
 
-# Initialize Session State for Persistence
+# Initialize Session State
 if "generated_data" not in st.session_state:
     st.session_state.generated_data = None
 
-# Check for API Key
+# API Key check
 try:
     API_KEY = st.secrets["OPENAI_API_KEY"]
 except KeyError:
@@ -113,9 +95,8 @@ except KeyError:
 st.title("🚀 SEO & GEO Content Engine")
 st.markdown("---")
 
-# Sidebar
 with st.sidebar:
-    st.header("⚙️ Content Strategy")
+    st.header("⚙️ Strategy")
     language = st.selectbox("Language", ["English", "Persian", "Spanish", "French", "German"])
     industry = st.selectbox("Industry", ["Legal", "Medical", "Travel", "Real Estate", "Technology", "Finance", "E-commerce"])
     search_intent = st.selectbox("Search Intent", ["Informational", "Transactional", "Navigational", "Commercial"])
@@ -126,21 +107,19 @@ with st.sidebar:
         st.session_state.generated_data = None
         st.rerun()
 
-# Input Section
 col1, col2 = st.columns([1, 1])
 with col1:
     article_title = st.text_input("Article Title", placeholder="Main Headline (H1)")
-    business_name = st.text_input("Business/Brand Name", placeholder="e.g. Deldar Legal")
-    target_audience = st.text_input("Target Audience", placeholder="e.g. Accident victims in CA")
+    business_name = st.text_input("Business/Brand Name", placeholder="e.g. Golden State Dental")
+    target_audience = st.text_input("Target Audience", placeholder="e.g. Patients in Sacramento")
     primary_keyword = st.text_input("Primary Keyword")
-    secondary_keywords = st.text_area("Secondary Keywords", placeholder="Separate with commas or Enter...")
+    secondary_keywords = st.text_area("Secondary Keywords", placeholder="Comma or Enter separated...")
 with col2:
     lsi_keywords = st.text_area("LSI Keywords", placeholder="Contextual synonyms...")
-    suggested_headings = st.text_area("Suggested Headings", placeholder="Introduction\nSection 1\nSection 2\nConclusion")
-    extra_instructions = st.text_area("Extra Instructions & GEO Data", placeholder="Include local data, citations, or specific stats...")
+    suggested_headings = st.text_area("Suggested Headings", placeholder="Intro\nServices\nWhy Us\nConclusion")
+    extra_instructions = st.text_area("Extra Instructions & GEO Data", placeholder="Include neighborhoods, highways, or specific local laws...")
 
-# Generation Logic
-if st.button("✨ GENERATE ELITE CONTENT"):
+if st.button("✨ GENERATE ELITE HUMANIZED CONTENT"):
     if not article_title or not primary_keyword or not business_name:
         st.warning("Please fill required fields (Title, Brand, and Primary Keyword).")
     else:
@@ -148,73 +127,55 @@ if st.button("✨ GENERATE ELITE CONTENT"):
             client = OpenAI(api_key=API_KEY)
             
             system_prompt = f"""
-            You are a senior investigative journalist and a high-ticket conversion copywriter for {business_name}. 
-            You hate typical 'AI-style' writing. Your prose is sophisticated, sharp, and carries the weight of 20 years of real-world experience in {industry}. 
-            You write in {language}.
+            You are an elite investigative journalist and a high-ticket practitioner in the {industry} field for {business_name}.
+            You write with the weight of 20 years of real-world experience. You despise robotic, generic AI writing.
+            Language: {language}.
             """
             
             user_prompt = f"""
-            Task: Write an ULTIMATE, human-grade deep-dive SEO article.
+            Write an ULTIMATE, human-grade deep-dive SEO article for {business_name}.
             
-            STRICT HUMANIZATION PROTOCOL (Bypass AI Detectors):
-            1. PERPLEXITY & BURSTINESS: Vary sentence length significantly. Use one very short sentence after a complex one.
-            2. VULNERABILITY & AUTHORITY: Speak directly to {target_audience}. Use 'we' at {business_name} or 'I' as an expert.
-            3. BAN LIST: Never use 'delve', 'unleash', 'comprehensive guide', 'in conclusion', 'moreover', 'look no further', 'vital role', or 'testament'.
-            4. CONTRACTIONS: Use 'don't', 'can't', 'it's'—write how humans speak.
-            5. ACTIVE VOICE: Avoid passive voice. Be direct and forceful.
-
-            SEO & GEO DEPTH (H1 to H4):
-            - Business Name: {business_name}.
+            STRICT HUMANIZATION & ANTI-AI PROTOCOL:
+            1. NO CLICHÉS: Never start with "Imagine this". Do not use phrases like "In the ever-evolving world", "Unleash", "Delve", "The result?", "Moreover", or "Furthermore".
+            2. PERPLEXITY & BURSTINESS: Vary sentence length significantly. Follow a long, complex sentence with a very short, punchy one (e.g., "It's that simple.").
+            3. HYPER-LOCAL GEO: If a location is mentioned in Extra Data, refer to specific neighborhoods, nearby highways (e.g., Highway 80), or local landmarks. Talk like a local resident.
+            4. FIRST-PERSON EXPERTISE: Use 'I' or 'We'. Instead of "Patients understand", write "When a patient walks into our office with severe pain, our first goal isn't just a procedure—it's relief."
+            5. HONEST FAQ: Write 3 FAQs that sound like a real conversation. If it's about cost, be direct and honest, not textbook-style.
+            6. NO EM-DASHES: Do not use (—) anywhere. Use short paragraphs.
+            
+            CORE DATA:
+            - Title: {article_title} (Transform into a magnetic, high-CTR headline).
+            - Brand: {business_name}.
             - Primary Keyword: {primary_keyword}.
-            - Hierarchy: Use a deep structure with H1, H2, H3, and H4 tags.
             - Search Intent: {search_intent}.
-            - Target Word Count: {word_count} words. Do not stop until you reach the depth required for a #1 ranking.
-            - GEO: Inject precise {industry} data, local statutes, or specific geographic references naturally.
+            - Target Word Count: {word_count} words.
+            - Authority: Include 2 external outbound links to .gov or .edu sources (relevant to {industry}, not competitors).
             
-            STRUCTURE:
-            1. H1: A magnetic, high-CTR headline.
-            2. Intro (200 words): A 'hook' identifying a specific pain point for {target_audience}.
-            3. Body: Deep-dive into "Why" and "How". Use bullet points but keep the surrounding text narrative and gritty.
-            4. 2 Authority Outbound Links: Use high-authority .gov or .edu anchors.
-            5. Persuasive CTA: Tailored to {business_name}.
-
-            RETURN FORMAT (JSON ONLY):
-            {{
-              "meta_title": "...",
-              "meta_description": "...",
-              "article_html": "FULL_HTML_CONTENT_HERE"
-            }}
+            OUTPUT:
+            Return ONLY a JSON object: 
+            {{"meta_title": "...", "meta_description": "...", "article_html": "..."}}
             
-            INPUT DATA:
-            - Title: {article_title}
-            - Secondary Keywords: {secondary_keywords}
-            - LSI Keywords: {lsi_keywords}
-            - Headings to include: {suggested_headings}
-            - Extra Data: {extra_instructions}
+            Keywords & Structure: {secondary_keywords}, {lsi_keywords}, {suggested_headings}.
+            Extra Data: {extra_instructions}
             """
             
-            with st.spinner(f"⏳ Strategizing a DEEP-DIVE humanized article for {business_name}..."):
+            with st.spinner(f"⏳ Strategizing human-grade content for {business_name}..."):
                 response = client.chat.completions.create(
                     model="gpt-4o",
-                    messages=[
-                        {"role": "system", "content": system_prompt},
-                        {"role": "user", "content": user_prompt}
-                    ],
+                    messages=[{"role": "system", "content": system_prompt}, {"role": "user", "content": user_prompt}],
                     response_format={"type": "json_object"},
-                    temperature=0.85 # Increased for better natural variance
+                    temperature=0.85
                 )
                 st.session_state.generated_data = json.loads(response.choices[0].message.content)
-                st.success(f"Elite Content for {business_name} generated successfully!")
+                st.success("Humanized Content Strategy Applied!")
         except Exception as e:
-            st.error(f"System Error: {str(e)}")
+            st.error(f"Error: {str(e)}")
 
-# Results Display
 if st.session_state.generated_data:
     data = st.session_state.generated_data
     st.markdown("---")
-    st.header(f"📋 Content for {business_name}")
+    st.header(f"📋 Professional Content: {business_name}")
     
-    # Meta Info Row
     m_col1, m_col2 = st.columns(2)
     with m_col1:
         st.write("**Meta Title**")
@@ -225,33 +186,23 @@ if st.session_state.generated_data:
         copy_to_clipboard(data.get("meta_description", ""), key_suffix="meta_d", is_html=True)
         st.text_area("Edit Description", value=data.get("meta_description", ""), height=68, key="md_edit", label_visibility="collapsed")
 
-    # Article Content Section
     st.write("**Article Body**")
-    c1, c2, _ = st.columns([1, 1, 4])
+    c1, c2, _ = st.columns([1.2, 1.2, 4])
     with c1:
-        copy_to_clipboard(data.get("article_html", ""), "Copy Code (HTML)", key_suffix="body_html", is_html=True)
+        copy_to_clipboard(data.get("article_html", ""), "💾 Copy HTML Code", key_suffix="body_html", is_html=True)
     with c2:
-        # Copy as Rich Text to preserve formatting/headings
-        copy_to_clipboard(data.get("article_html", ""), "Copy Formatted Text", key_suffix="body_rich", is_html=False)
+        copy_to_clipboard(data.get("article_html", ""), "👤 Copy Formatted Text", key_suffix="body_rich", is_html=False)
     
     tab_preview, tab_html = st.tabs(["👁️ Preview Content", "💻 HTML Code Source"])
-    
     with tab_preview:
         st.markdown(data.get("article_html", ""), unsafe_allow_html=True)
-    
     with tab_html:
-        st.text_area("HTML Source (Editable)", value=data.get("article_html", ""), height=500, key="body_edit")
-        st.download_button(
-            label="📥 Download HTML File",
-            data=data.get("article_html", ""),
-            file_name=f"{article_title.lower().replace(' ', '_')}.html",
-            mime="text/html"
-        )
+        st.text_area("HTML Source", value=data.get("article_html", ""), height=500, key="body_edit")
+        st.download_button("📥 Download HTML file", data.get("article_html", ""), file_name=f"article.html")
     
-    # Footer Stats
+    # Audit Stats
     actual_words = len(strip_html(data.get("article_html", "")).split())
     st.markdown("---")
-    st.markdown(f"**Final Audit:** Word Count: `{actual_words}` | Brand: `{business_name}` | Intent: `{search_intent}`")
+    st.markdown(f"**Final Human Audit:** Word Count: `{actual_words}` | Brand: `{business_name}` | Local SEO: `Active`")
 
-# Footer
-st.markdown("<p style='text-align: center; color: grey; font-size: 12px; margin-top: 50px;'>Elite SEO & GEO Engine | Sheragim.biz | © 2026</p>", unsafe_allow_html=True)
+st.markdown("<p style='text-align: center; color: grey; font-size: 11px; margin-top: 50px;'>Elite SEO & GEO Engine | Sheragim.biz | © 2026</p>", unsafe_allow_html=True)

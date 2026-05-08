@@ -147,42 +147,37 @@ if st.button("✨ GENERATE ELITE CONTENT"):
         try:
             client = OpenAI(api_key=API_KEY)
             
-            # Elite System Persona
-            system_prompt = f"You are an elite SEO content strategist, content writer, and conversion copywriter. Expert in {industry}. Language: {language}."
+            system_prompt = f"""
+            You are a senior investigative journalist and a high-ticket conversion copywriter for {business_name}. 
+            You hate typical 'AI-style' writing. Your prose is sophisticated, sharp, and carries the weight of 20 years of real-world experience in {industry}. 
+            You write in {language}.
+            """
             
-            # Comprehensive User Prompt linking all fields - REWRITTEN FOR DEPTH
             user_prompt = f"""
-            Task: Write an ULTIMATE, long-form, and highly comprehensive SEO article that is E-E-A-T compliant.
+            Task: Write an ULTIMATE, human-grade deep-dive SEO article.
             
-            BRAND & INDUSTRY CONTEXT:
-            - Business Name: {business_name} (Expert authority in {industry}).
+            STRICT HUMANIZATION PROTOCOL (Bypass AI Detectors):
+            1. PERPLEXITY & BURSTINESS: Vary sentence length significantly. Use one very short sentence after a complex one.
+            2. VULNERABILITY & AUTHORITY: Speak directly to {target_audience}. Use 'we' at {business_name} or 'I' as an expert.
+            3. BAN LIST: Never use 'delve', 'unleash', 'comprehensive guide', 'in conclusion', 'moreover', 'look no further', 'vital role', or 'testament'.
+            4. CONTRACTIONS: Use 'don't', 'can't', 'it's'—write how humans speak.
+            5. ACTIVE VOICE: Avoid passive voice. Be direct and forceful.
+
+            SEO & GEO DEPTH:
+            - Business Name: {business_name}.
+            - Primary Keyword: {primary_keyword}.
+            - Structure: H1 -> H2 -> H3 -> H4 hierarchy.
+            - Search Intent: {search_intent}.
+            - Target Word Count: {word_count} words. Do not stop until you reach the depth required for a #1 ranking.
+            - GEO: Inject precise {industry} data, local statutes, or specific geographic references naturally into the narrative.
             
-            OBJECTIVE: 
-            Generate a deep-dive guide. The goal is to be the #1 resource on the internet for this topic. 
-            Do not just define terms; explain the "why," the "how," and the "what's next."
-            
-            HIERARCHY & STRUCTURE (STRICT):
-            1. H1 Header: Transform "{article_title}" into a magnetic, high-CTR headline.
-            2. Introduction (150-200 words): Use an emotional or logical hook for {target_audience}.
-            3. Detailed Body Content:
-               - Use at least 4-6 Main Sections (H2).
-               - Inside EACH H2, you MUST use at least 2-3 Sub-sections (H3).
-               - Use H4 for technical breakdowns or specific examples where appropriate.
-            4. 3 Optimized FAQs: Real-world questions with detailed answers.
+            STRUCTURE:
+            1. H1: A magnetic, human-written headline (no AI cliches).
+            2. Intro (200 words): A 'hook' that identifies a specific pain point for {target_audience}.
+            3. Body: Break down the "why" and "how". Use bullet points but keep the surrounding text narrative and gritty.
+            4. 2 Authority Outbound Links: Use high-authority .gov or .edu anchors.
             5. Persuasive CTA: Tailored to {business_name}.
-            
-            DEPTH REQUIREMENTS:
-            - Target Word Count: {word_count} words. You MUST aim to meet this target.
-            - Provide real-world examples, step-by-step processes, and actionable advice.
-            - GEO Optimization: Include precise California-specific data, local statutes, or industry-specific statistics to build trust.
-            - Outbound Links: Include 2 highly authoritative external links (.gov or .edu) as anchor text.
-            
-            WRITING STYLE:
-            - AVOID em dashes (—). 
-            - Use short, punchy paragraphs for readability.
-            - Humanize the tone: Speak as an industry veteran with years of experience.
-            - AVOID fluff. Every sentence must add value or data.
-            
+
             RETURN FORMAT:
             Return ONLY a valid JSON object:
             {{
@@ -191,10 +186,15 @@ if st.button("✨ GENERATE ELITE CONTENT"):
               "article_html": "FULL_HTML_CONTENT_HERE"
             }}
             
-            SEO DATA:
-            - Primary: {primary_keyword}
+            INPUT DATA:
+            - Title: {article_title}
             - Secondary: {secondary_keywords}
             - LSI: {lsi_keywords}
+            - Headings: {suggested_headings}
+            - Extra: {extra_instructions}
+            """
+            
+            with st.spinner(f"⏳ Strategizing a human-grade guide for {business_name}... (Bypassing AI detection patterns)"):
             - Headings to include: {suggested_headings}
             - Extra: {extra_instructions}
             """

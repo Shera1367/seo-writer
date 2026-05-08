@@ -150,56 +150,56 @@ if st.button("✨ GENERATE ELITE CONTENT"):
             # Elite System Persona
             system_prompt = f"You are an elite SEO content strategist, content writer, and conversion copywriter. Expert in {industry}. Language: {language}."
             
-            # Comprehensive User Prompt linking all fields
+            # Comprehensive User Prompt linking all fields - REWRITTEN FOR DEPTH
             user_prompt = f"""
-            Task: Write an elite, 100% unique, and E-E-A-T compliant SEO article.
+            Task: Write an ULTIMATE, long-form, and highly comprehensive SEO article that is E-E-A-T compliant.
             
-            BRAND CONTEXT:
-            - Business Name: {business_name} (Use this brand name naturally throughout the article to build authority).
-            - Industry: {industry}.
+            BRAND & INDUSTRY CONTEXT:
+            - Business Name: {business_name} (Expert authority in {industry}).
             
-            HEADLINE OPTIMIZATION:
-            - Current Title: "{article_title}". 
-            - Action: Transform this into a magnetic, high-CTR H1 headline using power words while keeping the Primary Keyword integrated.
+            OBJECTIVE: 
+            Generate a deep-dive guide. The goal is to be the #1 resource on the internet for this topic. 
+            Do not just define terms; explain the "why," the "how," and the "what's next."
             
-            SEO & GEO STRATEGY:
-            - Primary Keyword: {primary_keyword} (Focus).
-            - Secondary Keywords: {secondary_keywords} (Integrate naturally).
-            - LSI Keywords: {lsi_keywords} (Use for semantic richness).
-            - Search Intent: {search_intent} (Satisfy this intent fully).
-            - GEO Optimization: Include authoritative citations, stats, and data points.
-            - External Linking: Include exactly 2 outbound links to highly authoritative sources (e.g., .gov, .edu, or reputable non-profit organizations) that are strictly relevant to the topic. These MUST NOT be commercial competitors.
+            HIERARCHY & STRUCTURE (STRICT):
+            1. H1 Header: Transform "{article_title}" into a magnetic, high-CTR headline.
+            2. Introduction (150-200 words): Use an emotional or logical hook for {target_audience}.
+            3. Detailed Body Content:
+               - Use at least 4-6 Main Sections (H2).
+               - Inside EACH H2, you MUST use at least 2-3 Sub-sections (H3).
+               - Use H4 for technical breakdowns or specific examples where appropriate.
+            4. 3 Optimized FAQs: Real-world questions with detailed answers.
+            5. Persuasive CTA: Tailored to {business_name}.
             
-            AUDIENCE & STRUCTURE:
-            - Target Audience: {target_audience}.
-            - Tone: {tone}.
-            - Structure: Follow this outline if provided: {suggested_headings}.
-            - Word Count: {word_count}.
-            - Introduction (150-200 words): Hook {target_audience} emotionally/logically.
-            - Body: Explain the "Why" and "How". No em-dashes (—). Short paragraphs.
-            - FAQ: Include 3 optimized FAQs.
-            - CTA: A strong, persuasive closing for {business_name}.
+            DEPTH REQUIREMENTS:
+            - Target Word Count: {word_count} words. You MUST aim to meet this target.
+            - Provide real-world examples, step-by-step processes, and actionable advice.
+            - GEO Optimization: Include precise California-specific data, local statutes, or industry-specific statistics to build trust.
+            - Outbound Links: Include 2 highly authoritative external links (.gov or .edu) as anchor text.
             
-            FINAL REVIEW:
-            Humanize the content. Review for UX, SEO, and GEO standards.
+            WRITING STYLE:
+            - AVOID em dashes (—). 
+            - Use short, punchy paragraphs for readability.
+            - Humanize the tone: Speak as an industry veteran with years of experience.
+            - AVOID fluff. Every sentence must add value or data.
             
-            Return ONLY a valid JSON object: 
-            {{"meta_title": "...", "meta_description": "...", "article_html": "..."}}
+            RETURN FORMAT:
+            Return ONLY a valid JSON object:
+            {{
+              "meta_title": "...",
+              "meta_description": "...",
+              "article_html": "FULL_HTML_CONTENT_HERE"
+            }}
             
-            Extra Context: {extra_instructions}
+            SEO DATA:
+            - Primary: {primary_keyword}
+            - Secondary: {secondary_keywords}
+            - LSI: {lsi_keywords}
+            - Headings to include: {suggested_headings}
+            - Extra: {extra_instructions}
             """
             
-            with st.spinner(f"⏳ Strategizing and Writing for {business_name}..."):
-                response = client.chat.completions.create(
-                    model="gpt-4o",
-                    messages=[{"role": "system", "content": system_prompt}, {"role": "user", "content": user_prompt}],
-                    response_format={"type": "json_object"},
-                    temperature=0.7
-                )
-                st.session_state.generated_data = json.loads(response.choices[0].message.content)
-                st.success(f"Strategy applied for {business_name}!")
-        except Exception as e:
-            st.error(f"Error: {str(e)}")
+            with st.spinner(f"⏳ Strategizing a DEEP-DIVE article for {business_name}... (This takes longer because it's generating a full guide)"):
 
 # Results Display
 if st.session_state.generated_data:

@@ -163,23 +163,22 @@ if st.button("✨ GENERATE ELITE CONTENT"):
             4. CONTRACTIONS: Use 'don't', 'can't', 'it's'—write how humans speak.
             5. ACTIVE VOICE: Avoid passive voice. Be direct and forceful.
 
-            SEO & GEO DEPTH:
+            SEO & GEO DEPTH (H1 to H4):
             - Business Name: {business_name}.
             - Primary Keyword: {primary_keyword}.
-            - Structure: H1 -> H2 -> H3 -> H4 hierarchy.
+            - Hierarchy: Use a deep structure with H1, H2, H3, and H4 tags.
             - Search Intent: {search_intent}.
             - Target Word Count: {word_count} words. Do not stop until you reach the depth required for a #1 ranking.
-            - GEO: Inject precise {industry} data, local statutes, or specific geographic references naturally into the narrative.
+            - GEO: Inject precise {industry} data, local statutes, or specific geographic references naturally.
             
             STRUCTURE:
-            1. H1: A magnetic, human-written headline (no AI cliches).
-            2. Intro (200 words): A 'hook' that identifies a specific pain point for {target_audience}.
-            3. Body: Break down the "why" and "how". Use bullet points but keep the surrounding text narrative and gritty.
+            1. H1: A magnetic, high-CTR headline.
+            2. Intro (200 words): A 'hook' identifying a specific pain point for {target_audience}.
+            3. Body: Deep-dive into "Why" and "How". Use bullet points but keep the surrounding text narrative and gritty.
             4. 2 Authority Outbound Links: Use high-authority .gov or .edu anchors.
             5. Persuasive CTA: Tailored to {business_name}.
 
-            RETURN FORMAT:
-            Return ONLY a valid JSON object:
+            RETURN FORMAT (JSON ONLY):
             {{
               "meta_title": "...",
               "meta_description": "...",
@@ -188,18 +187,13 @@ if st.button("✨ GENERATE ELITE CONTENT"):
             
             INPUT DATA:
             - Title: {article_title}
-            - Secondary: {secondary_keywords}
-            - LSI: {lsi_keywords}
-            - Headings: {suggested_headings}
-            - Extra: {extra_instructions}
-            """
-            
-            with st.spinner(f"⏳ Strategizing a human-grade guide for {business_name}... (Bypassing AI detection patterns)"):
+            - Secondary Keywords: {secondary_keywords}
+            - LSI Keywords: {lsi_keywords}
             - Headings to include: {suggested_headings}
-            - Extra: {extra_instructions}
+            - Extra Data: {extra_instructions}
             """
             
-            with st.spinner(f"⏳ Strategizing a DEEP-DIVE article for {business_name}... (This takes longer because it's generating a full guide)"):
+            with st.spinner(f"⏳ Strategizing a DEEP-DIVE humanized article for {business_name}..."):
                 response = client.chat.completions.create(
                     model="gpt-4o",
                     messages=[
@@ -207,10 +201,10 @@ if st.button("✨ GENERATE ELITE CONTENT"):
                         {"role": "user", "content": user_prompt}
                     ],
                     response_format={"type": "json_object"},
-                    temperature=0.7
+                    temperature=0.85 # Increased for better natural variance
                 )
                 st.session_state.generated_data = json.loads(response.choices[0].message.content)
-                st.success(f"Elite Content Strategy for {business_name} completed!")
+                st.success(f"Elite Content for {business_name} generated successfully!")
         except Exception as e:
             st.error(f"System Error: {str(e)}")
 
@@ -260,4 +254,4 @@ if st.session_state.generated_data:
     st.markdown(f"**Final Audit:** Word Count: `{actual_words}` | Brand: `{business_name}` | Intent: `{search_intent}`")
 
 # Footer
-st.markdown("<p style='text-align: center; color: grey; font-size: 12px; margin-top: 50px;'>Elite SEO & GEO Engine | Built for Professional Content Teams | © 2026</p>", unsafe_allow_html=True)
+st.markdown("<p style='text-align: center; color: grey; font-size: 12px; margin-top: 50px;'>Elite SEO & GEO Engine | Sheragim.biz | © 2026</p>", unsafe_allow_html=True)

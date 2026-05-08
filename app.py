@@ -137,19 +137,20 @@ if st.button("✨ GENERATE ELITE HUMANIZED CONTENT"):
             
             STRICT HUMANIZATION & ANTI-AI PROTOCOL:
             1. NO CLICHÉS: Never start with "Imagine this". Do not use phrases like "In the ever-evolving world", "Unleash", "Delve", "The result?", "Moreover", or "Furthermore".
-            2. PERPLEXITY & BURSTINESS: Vary sentence length significantly. Follow a long, complex sentence with a very short, punchy one (e.g., "It's that simple.").
-            3. HYPER-LOCAL GEO: If a location is mentioned in Extra Data, refer to specific neighborhoods, nearby highways (e.g., Highway 80), or local landmarks. Talk like a local resident.
-            4. FIRST-PERSON EXPERTISE: Use 'I' or 'We'. Instead of "Patients understand", write "When a patient walks into our office with severe pain, our first goal isn't just a procedure—it's relief."
-            5. HONEST FAQ: Write 3 FAQs that sound like a real conversation. If it's about cost, be direct and honest, not textbook-style.
-            6. NO EM-DASHES: Do not use (—) anywhere. Use short paragraphs.
+            2. PERPLEXITY & BURSTINESS: Vary sentence length significantly. Follow a long, complex sentence with a very short, punchy one.
+            3. HYPER-LOCAL GEO: Refer to specific neighborhoods, nearby highways, or local landmarks if provided.
+            4. FIRST-PERSON EXPERTISE: Use 'I' or 'We'. Speak like a practitioner, not an observer.
+            5. FORMATTING EXCELLENCE: Use <strong> for critical terms and <u> for specific emphasis where needed.
+            6. AUTHORITATIVE QUOTE: Include exactly one relevant, inspiring quote from a famous world figure (philosopher, scientist, or industry pioneer) related to {industry}, wrapped in <blockquote> tags.
+            7. HONEST FAQ: Write 3 FAQs that sound like a real conversation. If it's about cost, be direct and honest.
+            8. NO EM-DASHES: Do not use (—) anywhere. Use short paragraphs.
             
             CORE DATA:
             - Title: {article_title} (Transform into a magnetic, high-CTR headline).
             - Brand: {business_name}.
             - Primary Keyword: {primary_keyword}.
-            - Search Intent: {search_intent}.
-            - Target Word Count: {word_count} words.
-            - Authority: Include 2 external outbound links to .gov or .edu sources (relevant to {industry}, not competitors).
+            - Word Count: {word_count} words.
+            - Authority: Include 2 external outbound links to .gov or .edu sources.
             
             OUTPUT:
             Return ONLY a JSON object: 
@@ -203,6 +204,6 @@ if st.session_state.generated_data:
     # Audit Stats
     actual_words = len(strip_html(data.get("article_html", "")).split())
     st.markdown("---")
-    st.markdown(f"**Final Human Audit:** Word Count: `{actual_words}` | Brand: `{business_name}` | Local SEO: `Active`")
+    st.markdown(f"**Final Human Audit:** Word Count: `{actual_words}` | Brand: `{business_name}` | SEO: `Humanized` | Quotes: `Active`")
 
 st.markdown("<p style='text-align: center; color: grey; font-size: 11px; margin-top: 50px;'>Elite SEO & GEO Engine | Sheragim.biz | © 2026</p>", unsafe_allow_html=True)

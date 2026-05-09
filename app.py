@@ -27,16 +27,22 @@ def strip_html(html_string):
     clean = re.compile('<.*?>')
     return re.sub(clean, '', html_string)
 
-def generate_google_image(prompt):
-    """Rewritten Google Imagen 4.0 generator with grid/collage prevention."""
+def generate_google_image(prompt, is_infographic=False):
+    """Google Imagen 4.0 generator for 16:9 banners and visual infographics."""
     url = f"https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict?key={GOOGLE_API_KEY}"
     
-    # Enhanced prompt to stop multi-panel/grid results
-    final_prompt = f"{prompt}. Single unified frame, one single scene, no grid, no collage, no split screen, no multi-panel, professional 35mm photography."
+    # Context-aware prompting
+    if is_infographic:
+        final_prompt = f"Professional clean educational infographic for '{prompt}'. Instructional diagram, step-by-step visual, minimal text, flat vector design style, high contrast, 16:9 ratio, presentation slide quality."
+    else:
+        final_prompt = f"{prompt}. Cinematic widescreen 16:9 composition, professional 35mm photography, single unified frame, natural lighting, high-end commercial quality."
     
     payload = {
         "instances": [{"prompt": final_prompt}],
-        "parameters": {"sampleCount": 1}
+        "parameters": {
+            "sampleCount": 1,
+            "aspectRatio": "16:9"
+        }
     }
     
     try:
@@ -88,15 +94,15 @@ st.markdown("""
     }
     .banner-container {
         width: 100%;
-        max-width: 100%;
-        height: auto;
+        max-width: 1200px;
+        aspect-ratio: 16 / 9;
         border-radius: 12px;
-        margin: 20px 0;
+        margin: 25px 0;
         border: 1px solid #e5e7eb;
         overflow: hidden;
         background: #f3f4f6;
     }
-    .banner-container img { width: 100%; height: auto; display: block; }
+    .banner-container img { width: 100%; height: 100%; object-fit: cover; display: block; }
     .rendered-content h1 { color: #111827 !important; font-weight: 800; border-bottom: 2px solid #3b82f6; padding-bottom: 10px; }
     .rendered-content h2 { color: #1f2937 !important; margin-top: 35px; font-weight: 700; border-left: 5px solid #3b82f6; padding-left: 15px; }
     .rendered-content h3 { color: #374151 !important; margin-top: 25px; font-weight: 600; }
@@ -106,12 +112,6 @@ st.markdown("""
     .data-table { width: 100%; border-collapse: collapse; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
     .data-table th { background-color: #3b82f6; color: white; padding: 15px; text-align: left; }
     .data-table td { padding: 12px 15px; border-bottom: 1px solid #e5e7eb; color: #1e293b !important; }
-    
-    /* Strict Infographic CSS */
-    .visual-infographic { background: #f8fafc; border: 2px dashed #3b82f6; padding: 25px; border-radius: 15px; margin: 30px 0; }
-    .infographic-step { display: flex; align-items: center; margin-bottom: 15px; padding: 15px; background: white; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
-    .step-text { color: #1e293b !important; font-weight: 600; font-size: 1.1em; }
-    .step-number { background: #3b82f6; color: white !important; min-width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 15px; font-weight: 900; font-size: 1.2em; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -134,7 +134,7 @@ with st.sidebar:
     st.divider()
     sidebar_word_count = st.select_slider("Target Words (Global)", options=word_options, value=1000)
     num_images = st.slider("Number of Images", 1, 3, 1)
-    include_infographic = st.checkbox("Include Visual Infographic", value=True)
+    include_infographic = st.checkbox("Include Educational Infographic (Visual)", value=True)
     include_table = st.checkbox("Include Summary/Stats Table", value=True)
     st.divider()
     if st.button("🗑️ Reset Application", type="secondary"):
@@ -174,6 +174,7 @@ if st.button("🔍 START RESEARCH & ANALYSIS"):
         except Exception as e: st.error(f"Error: {e}")
 
 st.divider()
+
 st.subheader("Step 2: Elite Article Generation")
 res = st.session_state.research_data or {}
 col_l, col_r = st.columns(2)
@@ -194,23 +195,9 @@ if st.button("✨ GENERATE HUMANIZED ELITE ARTICLE"):
         try:
             openai_client = OpenAI(api_key=OPENAI_API_KEY)
             
-            # Phase 1: Article Generation
             with st.spinner(f"⏳ Synthesizing master-level SEO content..."):
                 table_instr = "MANDATORY: Include a detailed data table using <table class='data-table'>." if include_table else ""
                 
-                # Concrete Example for Infographic to ensure formatting
-                info_instr = ""
-                if include_infographic:
-                    info_instr = """
-                    MANDATORY: You must include a 'Visual Infographic' section. 
-                    Structure MUST be EXACTLY like this:
-                    <div class='visual-infographic'>
-                        <h3>Process Overview</h3>
-                        <div class='infographic-step'><div class='step-number'>1</div><div class='step-text'>Detailed Description</div></div>
-                        <div class='infographic-step'><div class='step-number'>2</div><div class='step-text'>Detailed Description</div></div>
-                    </div>
-                    """
-
                 user_p = f"""
                 Write a comprehensive expert article for {business_name} in {language}. Words: {sidebar_word_count}. Intent: {search_intent}. 
                 H1 Title: {final_h1}. Structure: {headings_k}. Website: {business_url}.
@@ -220,45 +207,62 @@ if st.button("✨ GENERATE HUMANIZED ELITE ARTICLE"):
                 - Use 2 authority links (.gov or .edu).
                 - Start with <div class='key-takeaways'><strong>Key Highlights:</strong> [List]</div>.
                 - {table_instr}
-                - {info_instr}
-                - ABSOLUTELY NO Markdown hashtags (e.g., #, ##). Use ONLY raw <h1>, <h2>, <h3> tags.
-                - Professional, authoritative expert perspective.
-                - END with a high-conversion CTA mentioning {business_url}.
+                - ABSOLUTELY NO Markdown hashtags. Use ONLY raw <h1>, <h2>, <h3> tags.
+                - Professional authoritative expert perspective.
+                - END with a CTA mentioning {business_url}.
                 
                 Return JSON: {{'meta_title': '', 'meta_description': '', 'article_html': ''}}
                 """
                 
                 response = openai_client.chat.completions.create(
                     model="gpt-4o",
-                    messages=[{"role": "system", "content": "Professional SEO Content Specialist. You produce clean HTML ONLY."}, {"role": "user", "content": user_p}],
+                    messages=[{"role": "system", "content": "SEO Specialist."}, {"role": "user", "content": user_p}],
                     response_format={"type": "json_object"}
                 )
                 article_data = json.loads(response.choices[0].message.content)
 
+            # --- Image Generation Logic ---
             img_data_urls = []
+            info_img_url = None
+            
+            # 1. Generate Regular Banners
             if num_images > 0:
-                img_status = st.status(f"📸 Generating {num_images} high-end banners with Google Imagen 4.0...", expanded=True)
+                img_status = st.status(f"📸 Generating {num_images} banners (16:9) with Google Imagen 4.0...", expanded=True)
                 for i in range(num_images):
-                    img_status.write(f"Generating image {i+1} of {num_images}...")
-                    v_prompt = f"Professional authentic high-end photography for {final_h1} in {industry}. Shot on 35mm DSLR, natural light, real textures, sharp focus. Single composition scene, NO grid, NO collage, NO panels, NO multi-panel."
+                    img_status.write(f"Generating banner {i+1} of {num_images}...")
+                    v_prompt = f"Professional authentic high-end photography for {final_h1} in {industry}. Sharp focus, natural light. Single frame."
                     data_url = generate_google_image(v_prompt)
                     if data_url:
                         img_data_urls.append(data_url)
-                    else:
-                        img_status.write(f"⚠️ Image {i+1} failed.")
-                img_status.update(label="✅ Images processed!", state="complete", expanded=False)
+                img_status.update(label="✅ Banners processed!", state="complete", expanded=False)
+
+            # 2. Generate Visual Infographic (If requested)
+            if include_infographic:
+                with st.spinner("🎨 Creating Custom Visual Educational Infographic..."):
+                    info_url = generate_google_image(final_h1, is_infographic=True)
+                    if info_url:
+                        info_img_url = info_url
+            
+            # --- Embed Visuals in HTML ---
+            embedded_html = ""
+            
+            if info_img_url:
+                embedded_html += f'<hr><h2>Visual Educational Guide</h2><div class="banner-container"><img src="{info_img_url}"></div>'
             
             if img_data_urls:
-                embedded_images_html = "<hr><h2>Professional Visuals</h2>"
+                embedded_html += f'<hr><h2>Professional Photography (1200x675)</h2>'
                 for url in img_data_urls:
-                    embedded_images_html += f'<div class="banner-container"><img src="{url}"></div>'
-                article_data["article_html"] += embedded_images_html
+                    embedded_html += f'<div class="banner-container"><img src="{url}"></div>'
             
+            article_data["article_html"] += embedded_html
             article_data["image_urls"] = img_data_urls
-            st.session_state.generated_data = article_data
-            st.success("Elite Article and Single-Frame Imagery Ready!")
+            if info_img_url:
+                article_data["infographic_url"] = info_img_url
             
-        except Exception as e: st.error(f"Error during generation: {e}")
+            st.session_state.generated_data = article_data
+            st.success("Elite Article with Visual Assets Ready!")
+            
+        except Exception as e: st.error(f"Error: {e}")
 
 if st.session_state.generated_data:
     data = st.session_state.generated_data
@@ -276,14 +280,14 @@ if st.session_state.generated_data:
     st.markdown("</div>", unsafe_allow_html=True)
 
     st.markdown("<div class='deliverable-card'>", unsafe_allow_html=True)
-    st.subheader("📄 Article Content & Embedded Media")
+    st.subheader("📄 Article Content & 16:9 Banners")
     st.markdown(f"<div class='rendered-content'>{data.get('article_html', '')}</div>", unsafe_allow_html=True)
     st.markdown("</div>", unsafe_allow_html=True)
 
     st.markdown("<div class='deliverable-card'>", unsafe_allow_html=True)
     st.subheader("🛠️ Export & Download")
     c1, c2 = st.columns(2)
-    with c1: copy_to_clipboard(data.get("article_html", ""), "💾 Copy HTML (Full Content)", "html", True)
+    with c1: copy_to_clipboard(data.get("article_html", ""), "💾 Copy HTML", "html", True)
     with c2: copy_to_clipboard(data.get("article_html", ""), "👤 Copy Formatted Text", "rich", False)
     
     st.download_button(
@@ -294,25 +298,38 @@ if st.session_state.generated_data:
         use_container_width=True
     )
     
+    # Download section for Infographic separately
+    if "infographic_url" in data:
+        st.write("**Download Custom Infographic:**")
+        try:
+            info_bytes = base64.b64decode(data["infographic_url"].split(",")[1])
+            st.download_button(
+                label="📥 Download Educational Infographic (PNG)", 
+                data=info_bytes, 
+                file_name="educational_infographic.png", 
+                mime="image/png", 
+                use_container_width=True
+            )
+        except Exception: st.error("Error loading infographic file.")
+
     if "image_urls" in data and len(data["image_urls"]) > 0:
-        st.write("**Original High-Res Banners:**")
+        st.write("**Download Original High-Res Banners:**")
         cols = st.columns(len(data["image_urls"]))
         for idx, url in enumerate(data["image_urls"]):
             with cols[idx]:
                 try:
                     img_bytes = base64.b64decode(url.split(",")[1])
                     st.download_button(
-                        label=f"Banner {idx+1} (PNG)", 
+                        label=f"Banner {idx+1} (1200x675)", 
                         data=img_bytes, 
-                        file_name=f"google_imagen_{idx+1}.png", 
+                        file_name=f"google_banner_{idx+1}.png", 
                         mime="image/png", 
                         key=f"dl_single_{idx}"
                     )
-                except Exception:
-                    st.error(f"Error loading Image {idx+1}")
+                except Exception: st.error(f"Error loading Image {idx+1}")
     
     actual_words = len(strip_html(data.get("article_html", "")).split())
-    st.info(f"Audit: {actual_words} words | Grade: Elite Content")
+    st.info(f"Audit: {actual_words} words | Assets: Visual Infographic Included")
     st.markdown("</div>", unsafe_allow_html=True)
 
 st.markdown("<p style='text-align: center; color: #9ca3af; font-size: 11px; margin-top: 60px;'>Elite SEO & GEO Engine | Google Imagen 4.0 | © 2026</p>", unsafe_allow_html=True)

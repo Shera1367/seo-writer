@@ -20,7 +20,40 @@ except Exception:
     st.error("❌ API Key not found! Please add 'OPENAI_API_KEY' to your Streamlit Secrets.")
     st.stop()
 
-# ... existing code (strip_html and download functions) ...
+def strip_html(html_string):
+    """Removes HTML tags for word count auditing."""
+    clean = re.compile('<.*?>')
+    return re.sub(clean, '', html_string)
+
+def download_image_bytes(url):
+    """Fetch image bytes for download buttons."""
+    try:
+        response = requests.get(url)
+        return response.content
+    except:
+        return None
+
+def copy_to_clipboard(content, button_label="Copy", key_suffix="", is_html=False):
+    """JavaScript for Rich Text and HTML copying."""
+    safe_content = content.replace('\\', '\\\\').replace('`', '\\`').replace('$', '\\$').replace('"', '\\"')
+    if is_html:
+        js_code = f"var t=document.createElement('textarea');t.value=`{safe_content}`;document.body.appendChild(t);t.select();document.execCommand('copy');document.body.removeChild(t);"
+    else:
+        js_code = f"var c=document.createElement('div');c.innerHTML=`{safe_content}`;c.style.position='fixed';c.style.opacity=0;document.body.appendChild(c);window.getSelection().removeAllRanges();var r=document.createRange();r.selectNode(c);window.getSelection().addRange(r);document.execCommand('copy');window.getSelection().removeAllRanges();document.body.removeChild(c);"
+
+    html_button = f"""
+    <button id="copyBtn{key_suffix}" style="background-color:#007bff;color:white;border:none;padding:8px 16px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;width:100%;">
+        {button_label}
+    </button>
+    <script>
+    document.getElementById("copyBtn{key_suffix}").onclick = function() {{
+        {js_code}
+        this.innerHTML = "✓ Copied"; this.style.backgroundColor = "#28a745";
+        setTimeout(() => {{ this.innerHTML = "{button_label}"; this.style.backgroundColor = "#007bff"; }}, 2000);
+    }}
+    </script>
+    """
+    components.html(html_button, height=45)
 
 st.markdown("""
 <style>
@@ -110,73 +143,10 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# ... existing code (title and sidebar setup) ...
-
-if st.button("✨ GENERATE HUMANIZED ELITE ARTICLE"):
-    if not final_h1 or not primary_k:
-        st.warning("H1 and Primary Keyword are required.")
-    else:
-        try:
-            client = OpenAI(api_key=API_KEY)
-            with st.spinner(f"⏳ Synthesizing elite deep-dive content..."):
-                
-                table_instr = "MANDATORY: Include a detailed comparison table using: <div class='data-table-container'><table class='data-table'>...</table></div>." if include_table else ""
-                info_instr = "MANDATORY: Include a 'Visual Infographic' section. DO NOT USE <img> TAGS. Use the defined CSS classes." if include_infographic else ""
-
-                user_p = f"""
-                Write a MASTER-LEVEL, high-authority SEO article for {business_name} in {language}. 
-                Target Words: {sidebar_word_count}.
-                Intent: {search_intent}. 
-                H1 Title: {final_h1}. 
-                Structure provided: {headings_k}. 
-                Website: {business_url}.
-                
-                CRITICAL DEPTH & AUTHORITY RULES:
-                - EVERY H2, H3, and H4 heading MUST be followed by at least 150-200 words of substantial, informative text.
-                - MANDATORY: Include exactly 2 outbound links to highly authoritative sources (e.g., .gov or .edu websites) relevant to the topic. These MUST NOT be commercial competitors.
-                - Deep-dive into the "Why" and "How". Provide actionable advice and expert insights.
-                - Paragraphs should be concise (2-4 sentences) but MUST be numerous to build total depth.
-                - Use a humanized, authoritative first-person perspective.
-                
-                STRICT FORMATTING:
-                - No labels like "H1:", "H2:". Use raw <h1>, <h2> tags.
-                - {table_instr}
-                - {info_instr}
-                - Start with <div class='key-takeaways'><strong>Key Highlights:</strong> [List]</div>.
-                - CTA at end with {business_url}.
-                
-                META:
-                - 'meta_title': 50-60 chars, front-load "{primary_k}".
-                - 'meta_description': 150 chars max.
-                Return ONLY JSON: {{'meta_title': '', 'meta_description': '', 'article_html': ''}}
-                """
-                
-                # ... existing code (OpenAI Call and Image Generation) ...
-    .visual-infographic h3 { color: #1e293b !important; margin-top: 0 !important; margin-bottom: 20px !important; }
-    .infographic-step {
-        display: flex;
-        align-items: center;
-        margin-bottom: 15px;
-        padding: 15px;
-        background: white;
-        border-radius: 10px;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-    }
-    .step-text { color: #1e293b !important; font-weight: 500; font-size: 1.1em; }
-    .step-number {
-        background: #3b82f6;
-        color: white !important;
-        min-width: 35px;
-        height: 35px;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        margin-right: 15px;
-        font-weight: 900;
-    }
-</style>
-""", unsafe_allow_html=True)
+if "research_data" not in st.session_state:
+    st.session_state.research_data = None
+if "generated_data" not in st.session_state:
+    st.session_state.generated_data = None
 
 st.title("🚀 Elite SEO & GEO Content Engine")
 
@@ -277,8 +247,9 @@ if st.button("✨ GENERATE HUMANIZED ELITE ARTICLE"):
                 Structure provided: {headings_k}. 
                 Website: {business_url}.
                 
-                CRITICAL DEPTH RULES:
+                CRITICAL DEPTH & AUTHORITY RULES:
                 - EVERY H2, H3, and H4 heading MUST be followed by at least 150-200 words of substantial, informative text.
+                - MANDATORY: Include exactly 2 outbound links to highly authoritative sources (e.g., .gov or .edu websites) relevant to the topic. These MUST NOT be commercial competitors.
                 - DO NOT write one-sentence explanations. 
                 - Deep-dive into the "Why" and "How". Provide actionable advice and expert insights.
                 - Paragraphs should be concise (2-4 sentences) but MUST be numerous to build total depth.
@@ -306,20 +277,8 @@ if st.button("✨ GENERATE HUMANIZED ELITE ARTICLE"):
                 
                 img_urls = []
                 for i in range(num_images):
-                    # Optimized prompt for maximum realism and zero "AI-look"
-                    v_prompt = f"""
-                    Authentic, high-end professional lifestyle photography of {final_h1} in a {industry} context. 
-                    Shot on 35mm lens, natural ambient daylight, soft shadows, real human skin textures, 
-                    professional environment, candid moment. Minimalist composition, sharp focus, 
-                    documentary style. NO text, NO 3D render, NO plastic skin, NO digital illustration.
-                    """
-                    img_res = client.images.generate(
-                        model="dall-e-3", 
-                        prompt=v_prompt.strip(), 
-                        size="1792x1024", 
-                        quality="hd", 
-                        style="vivid" if industry == "Travel" else "natural" # "natural" is key for Legal/Medical
-                    )
+                    v_prompt = f"Authentic, high-end professional lifestyle photography of {final_h1} in a {industry} context. Natural lighting, real textures, sharp focus, real environment. NO text, NO cartoon, NO plastic skin."
+                    img_res = client.images.generate(model="dall-e-3", prompt=v_prompt, size="1792x1024", quality="hd", style="natural")
                     img_urls.append(img_res.data[0].url)
                 
                 gen_data["image_urls"] = img_urls

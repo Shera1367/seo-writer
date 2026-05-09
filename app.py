@@ -12,24 +12,23 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# دیگر کلید را اینجا نمی‌نویسیم تا توسط OpenAI باطل نشود
 try:
-# We no longer hardcode the key here to prevent OpenAI from automatically revoking it
-try:
+    # We use st.secrets to hide the key from GitHub scanners
     API_KEY = st.secrets["OPENAI_API_KEY"]
-except KeyError:
-    st.error("❌ API Key not found! Please add your key to the Streamlit Secrets dashboard.")
+except Exception:
+    st.error("❌ API Key not found! Please add 'OPENAI_API_KEY' to your Streamlit Secrets dashboard.")
     st.stop()
 
 def strip_html(html_string):
-    """Removes HTML tags for word count and plain text processing."""
+    """Removes HTML tags for word count processing."""
     clean = re.compile('<.*?>')
     return re.sub(clean, '', html_string)
 
 def copy_to_clipboard(content, button_label="Copy", key_suffix="", is_html=False):
-    """JavaScript-based copy function supporting both HTML code and Rich Text selection."""
+    """JavaScript-based copy function supporting HTML and Rich Text."""
     safe_content = content.replace('\\', '\\\\').replace('`', '\\`').replace('$', '\\$').replace('"', '\\"')
     if is_html:
+        # Standard copy for code
         js_code = f"""
         var textArea = document.createElement("textarea");
         textArea.value = `{safe_content}`;
@@ -39,6 +38,7 @@ def copy_to_clipboard(content, button_label="Copy", key_suffix="", is_html=False
         document.body.removeChild(textArea);
         """
     else:
+        # Rich Text copy to preserve headers/formatting for Word/WordPress
         js_code = f"""
         var container = document.createElement("div");
         container.innerHTML = `{safe_content}`;
@@ -92,12 +92,6 @@ st.markdown("""
         margin-bottom: 20px;
         box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
     }
-    .section-header {
-        font-size: 1.25rem;
-        font-weight: 700;
-        color: #111827;
-        margin-bottom: 1rem;
-    }
     .keyword-pill {
         display: inline-block;
         background: #eff6ff;
@@ -119,12 +113,11 @@ st.markdown("""
     }
     .banner-container img { width: 100%; height: 100%; object-fit: cover; }
     .rendered-content h1 { color: #111827; font-weight: 800; }
-    .rendered-content blockquote { border-left: 4px solid #007bff; padding-left: 20px; font-style: italic; color: #4b5563; }
 </style>
 """, unsafe_allow_html=True)
 
 st.title("🚀 Elite SEO & GEO Content Engine")
-st.markdown("<p style='color: #6b7280; margin-top: -15px;'>Professional Strategy-First AI Content Platform</p>", unsafe_allow_html=True)
+st.markdown("<p style='color: #6b7280; margin-top: -15px;'>Two-Phase Professional AI Writing Platform</p>", unsafe_allow_html=True)
 
 with st.sidebar:
     st.header("⚙️ Global Strategy")
@@ -139,11 +132,11 @@ with st.sidebar:
         st.session_state.generated_data = None
         st.rerun()
 
-tab_research, tab_generator = st.tabs(["🔍 Phase 1: Deep Research", "✨ Phase 2: Elite Writing Engine"])
+tab_research, tab_generator = st.tabs(["🔍 Phase 1: Research", "✨ Phase 2: Elite Writing"])
 
 with tab_research:
-    st.markdown("<div class='section-header'>Topic Analysis & Structure Discovery</div>", unsafe_allow_html=True)
-    seed_topic = st.text_input("Enter Main Topic Idea", placeholder="e.g. Dental Implant Benefits for Seniors")
+    st.subheader("Topic Discovery & Structure")
+    seed_topic = st.text_input("Enter Topic Idea", placeholder="e.g. Best Divorce Lawyer in San Francisco")
     
     if st.button("🔍 START STRATEGIC RESEARCH"):
         if not seed_topic or not business_name:
@@ -153,7 +146,7 @@ with tab_research:
                 client = OpenAI(api_key=API_KEY)
                 res_prompt = f"""
                 Industry: {industry}. Brand: {business_name}. Topic: "{seed_topic}".
-                Generate: 3 High-CTR Headlines, 1 Primary Keyword, 5 Secondary Keywords, 10 LSI Keywords, and a deep-dive H2-H4 outline.
+                Generate: 3 High-CTR Magnetic Headlines, 1 Primary Keyword, 5 Secondary Keywords, 10 LSI Keywords, and a deep-dive H2-H4 outline.
                 Return ONLY JSON: {{"headlines": [], "primary": "", "secondary": "", "lsi": "", "structure_text": ""}}
                 """
                 with st.spinner("⏳ Analyzing search landscape..."):
@@ -178,15 +171,15 @@ with tab_research:
         st.markdown("</div>", unsafe_allow_html=True)
 
 with tab_generator:
-    res = st.session_state.research_data or {}
-    col1, col2 = st.columns(2)
-    with col1:
-        article_title = st.text_input("Final H1 Title", value=res.get("headlines", [""])[0] if res else "")
-        primary_k = st.text_input("Primary Keyword", value=res.get("primary", "") if res else "")
-        secondary_k = st.text_area("Secondary Keywords", value=res.get("secondary", "") if res else "")
-    with col2:
-        lsi_k = st.text_area("LSI Keywords", value=res.get("lsi", "") if res else "")
-        headings_k = st.text_area("Heading Hierarchy (H2-H4)", value=res.get("structure_text", "") if res else "")
+    res_data = st.session_state.research_data or {}
+    col_l, col_r = st.columns(2)
+    with col_l:
+        article_title = st.text_input("Final H1 Title", value=res_data.get("headlines", [""])[0] if res_data else "")
+        primary_k = st.text_input("Primary Keyword (H1)", value=res_data.get("primary", "") if res_data else "")
+        secondary_k = st.text_area("Secondary Keywords", value=res_data.get("secondary", "") if res_data else "")
+    with col_r:
+        lsi_k = st.text_area("LSI Keywords", value=res_data.get("lsi", "") if res_data else "")
+        headings_k = st.text_area("Heading Hierarchy (H2-H4)", value=res_data.get("structure_text", "") if res_data else "")
     
     search_intent = st.selectbox("Search Intent", ["Informational", "Transactional", "Commercial"])
     word_count_goal = st.select_slider("Target Words", [500, 1000, 1500, 2000], value=1000)
@@ -197,10 +190,17 @@ with tab_generator:
         else:
             try:
                 client = OpenAI(api_key=API_KEY)
-                with st.spinner("⏳ Synthesizing deep-dive content and banner..."):
+                with st.spinner("⏳ Synthesizing deep-dive content and DALL-E 3 banner..."):
                     # Text Generation
-                    sys_p = f"You are an elite Investigative Journalist for {industry}."
-                    user_p = f"Write a 100% unique, human-grade, deep-dive article for {business_name} in {language}. Title: {article_title}. Words: {word_count_goal}. Structure: {headings_k}. No em-dashes. Use short sentences. Include 2 outbound .gov/.edu links. Include 3 FAQs. Use <strong> and <u> tags. Return JSON: {{'meta_title': '', 'meta_description': '', 'article_html': ''}}"
+                    sys_p = f"You are an elite SEO/GEO Investigative Journalist for {industry}."
+                    user_p = f"""
+                    Write a 100% unique, human-grade deep-dive for {business_name} in {language}.
+                    Title: {article_title}. Target words: {word_count_goal}. Intent: {search_intent}.
+                    Structure: {headings_k}. 
+                    Strict Rules: No em-dashes. Vary sentence lengths. No clichés. 
+                    Include 2 .gov/.edu links. Include 3 FAQs. Use <strong> and <u> tags.
+                    Return JSON: {{'meta_title': '', 'meta_description': '', 'article_html': ''}}
+                    """
                     
                     response = client.chat.completions.create(
                         model="gpt-4o",
@@ -210,7 +210,7 @@ with tab_generator:
                     gen_data = json.loads(response.choices[0].message.content)
                     
                     # Image Generation
-                    img_prompt = f"Realistic, cinematic professional photo for '{article_title}' in {industry} industry, high resolution, no text."
+                    img_prompt = f"Professional high-resolution realistic photography for '{article_title}' in {industry} field, cinematic lighting, wide angle, no text."
                     img_res = client.images.generate(model="dall-e-3", prompt=img_prompt, size="1792x1024", quality="hd")
                     gen_data["image_url"] = img_res.data[0].url
                     
@@ -239,7 +239,7 @@ if st.session_state.generated_data:
     st.markdown("<div class='deliverable-card'>", unsafe_allow_html=True)
     st.write("**Article Content**")
     c1, c2, _ = st.columns([1, 1, 2])
-    with c1: copy_to_clipboard(data.get("article_html", ""), "💾 Copy HTML", "html", True)
+    with c1: copy_to_clipboard(data.get("article_html", ""), "💾 Copy HTML Code", "html", True)
     with c2: copy_to_clipboard(data.get("article_html", ""), "👤 Copy Formatted Text", "rich", False)
     
     t1, t2 = st.tabs(["👁️ Preview", "💻 HTML Source"])
@@ -250,4 +250,4 @@ if st.session_state.generated_data:
     actual_words = len(strip_html(data.get("article_html", "")).split())
     st.markdown(f"<div style='background:#f3f4f6;padding:12px;border-radius:8px;'>Audit: {actual_words} words | Brand: {business_name} | Grade: Elite</div>", unsafe_allow_html=True)
 
-st.markdown("<p style='text-align: center; color: #9ca3af; font-size: 11px; margin-top: 60px;'>Elite SEO & GEO Engine | Powered by GPT-4o | © 2026</p>", unsafe_allow_html=True)
+st.markdown("<p style='text-align: center; color: #9ca3af; font-size: 11px; margin-top: 60px;'>Elite SEO & GEO Engine | Powered by OpenAI | © 2026</p>", unsafe_allow_html=True)

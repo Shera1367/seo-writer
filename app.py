@@ -15,7 +15,6 @@ st.set_page_config(
 )
 
 try:
-    # Fetching the key from Streamlit Secrets
     API_KEY = st.secrets["OPENAI_API_KEY"]
 except Exception:
     st.error("❌ API Key not found! Please add 'OPENAI_API_KEY' to your Streamlit Secrets.")
@@ -102,7 +101,7 @@ st.markdown("""
     }
     .banner-container {
         width: 100%;
-        height: 350px;
+        height: 400px;
         overflow: hidden;
         border-radius: 12px;
         margin-bottom: 10px;
@@ -120,8 +119,35 @@ st.markdown("""
         margin: 20px 0; 
         color: #1e293b !important; 
     }
-    .key-takeaways strong { color: #1e293b !important; }
-    .key-takeaways ul li { color: #1e293b !important; margin-bottom: 8px; }
+    /* STYLING FOR THE VISUAL INFOGRAPHIC */
+    .visual-infographic {
+        background: #f8fafc;
+        border: 2px dashed #cbd5e1;
+        padding: 25px;
+        border-radius: 15px;
+        margin: 30px 0;
+    }
+    .infographic-step {
+        display: flex;
+        align-items: center;
+        margin-bottom: 15px;
+        padding: 10px;
+        background: white;
+        border-radius: 10px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+    .step-number {
+        background: #3b82f6;
+        color: white;
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 15px;
+        font-weight: bold;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -207,6 +233,7 @@ if st.button("✨ GENERATE HUMANIZED ELITE ARTICLE"):
             client = OpenAI(api_key=API_KEY)
             with st.spinner(f"⏳ Synthesizing elite content and {num_images} photorealistic banners..."):
                 
+                # REFINED PROMPT FOR INFOGRAPHIC AND CLEAN HEADINGS
                 user_p = f"""
                 You are a world-class SEO content writer. 
                 Task: Write a master-level article for {business_name} in {language}.
@@ -214,14 +241,15 @@ if st.button("✨ GENERATE HUMANIZED ELITE ARTICLE"):
                 H1 Title: {final_h1}. Structure: {headings_k}.
                 
                 STRICT CLEANING RULES:
-                - DO NOT include "H1:", "H2:", or "H3:" text labels inside the content or tags.
-                - Use only <h1>, <h2>, <h3> tags to define headers. Example: <h2>Title</h2>, NOT <h2>H2: Title</h2>.
+                - DO NOT include "H1:", "H2:", or "H3:" text labels.
+                - Use only <h1>, <h2>, <h3> tags.
                 
                 STRATEGY RULES:
                 1. Start with a <div class='key-takeaways'><strong>Key Highlights:</strong> [Bullet points]</div> after H1.
-                2. Scannability: Max 3 sentences per paragraph. Use lists for every 200 words.
-                3. Links: Include 2 relevant .gov/.edu sources.
-                4. Humanize: Vary sentence length. Use professional first-person expert tone.
+                2. {'MANDATORY: Include a section wrapped in <div class="visual-infographic">...</div> with steps wrapped in <div class="infographic-step"><div class="step-number">#</div>Text</div>' if include_infographic else ""}
+                3. Scannability: Max 3 sentences per paragraph.
+                4. Links: Include 2 relevant .gov/.edu sources.
+                5. Humanize: Use professional first-person expert tone. Vary sentence length.
                 
                 META RULES: 
                 - 'meta_title': 50-60 chars, front-load "{primary_k}", use [2026].
@@ -231,14 +259,15 @@ if st.button("✨ GENERATE HUMANIZED ELITE ARTICLE"):
                 
                 response = client.chat.completions.create(
                     model="gpt-4o",
-                    messages=[{"role": "system", "content": f"Expert in {industry} writing. Strictly follow HTML rules."}, {"role": "user", "content": user_p}],
+                    messages=[{"role": "system", "content": f"Expert in {industry} writing. Strictly follow HTML visual rules."}, {"role": "user", "content": user_p}],
                     response_format={"type": "json_object"}
                 )
                 gen_data = json.loads(response.choices[0].message.content)
                 
                 img_urls = []
                 for i in range(num_images):
-                    v_prompt = f"Authentic professional real-world photography of {final_h1}. Natural lighting, professional setting, hyper-realistic, no text."
+                    # NEW ULTRA-REALISTIC PROMPT
+                    v_prompt = f"AUTHENTIC REAL-WORLD PHOTOGRAPHY of {final_h1} in {industry} setting. Natural sunlight, high-end professional DSLR camera, authentic skin textures, professional equipment, sharp details, NO CGI, NO CARTOON, NO SATURATION. National Geographic style, professional workplace environment, 8k resolution."
                     img_res = client.images.generate(model="dall-e-3", prompt=v_prompt, size="1792x1024", quality="hd")
                     img_urls.append(img_res.data[0].url)
                 
@@ -271,7 +300,7 @@ if st.session_state.generated_data:
     st.markdown("</div>", unsafe_allow_html=True)
 
     if "image_urls" in data:
-        st.subheader(f"🖼️ Realistic Banners ({len(data['image_urls'])} total)")
+        st.subheader(f"🖼️ Authentic Real-World Banners ({len(data['image_urls'])} total)")
         for idx, url in enumerate(data["image_urls"]):
             st.markdown(f'<div class="banner-container"><img src="{url}"></div>', unsafe_allow_html=True)
             img_bytes = download_image_bytes(url)

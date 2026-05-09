@@ -15,6 +15,7 @@ st.set_page_config(
 )
 
 try:
+    # Fetching the key from Streamlit Secrets
     API_KEY = st.secrets["OPENAI_API_KEY"]
 except Exception:
     st.error("❌ API Key not found! Please add 'OPENAI_API_KEY' to your Streamlit Secrets.")
@@ -108,14 +109,10 @@ st.markdown("""
         border: 1px solid #e5e7eb;
     }
     .banner-container img { width: 100%; height: 100%; object-fit: cover; }
-    .infographic-box {
-        background: #f0f7ff;
-        border: 2px dashed #007bff;
-        padding: 20px;
-        border-radius: 10px;
-        margin: 20px 0;
-    }
-    .rendered-content h1 { color: #111827; font-weight: 800; }
+    .rendered-content h1 { color: #111827; font-weight: 800; border-bottom: 2px solid #3b82f6; padding-bottom: 10px; }
+    .rendered-content h2 { color: #1f2937; margin-top: 30px; font-weight: 700; }
+    .rendered-content p { line-height: 1.8; color: #374151; margin-bottom: 20px; }
+    .key-takeaways { background: #f0f7ff; border-left: 5px solid #007bff; padding: 20px; border-radius: 8px; margin: 20px 0; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -130,7 +127,7 @@ with st.sidebar:
     business_name = st.text_input("Business Name", placeholder="e.g. Deldar Legal")
     target_audience = st.text_input("Target Audience", placeholder="e.g. Accident victims in CA")
     st.divider()
-    sidebar_word_count = st.select_slider("Default Target Words", options=word_options, value=1000)
+    sidebar_word_count = st.select_slider("Target Words (Global)", options=word_options, value=1000)
     if st.button("🗑️ Reset Application", type="secondary"):
         st.session_state.research_data = None
         st.session_state.generated_data = None
@@ -141,7 +138,7 @@ col_s1, col_s2 = st.columns(2)
 with col_s1:
     seed_topic = st.text_input("Enter Seed Topic", placeholder="e.g. Benefits of Dental Implants")
 with col_s2:
-    competitor_links = st.text_area("Competitor URLs (One per line)", placeholder="https://competitor1.com/blog\nhttps://competitor2.com/article")
+    competitor_links = st.text_area("Competitor URLs (One per line)", placeholder="Paste Top 3-5 Ranking URLs here")
 
 if st.button("🔍 START RESEARCH & ANALYSIS"):
     if not seed_topic or not business_name:
@@ -151,9 +148,10 @@ if st.button("🔍 START RESEARCH & ANALYSIS"):
             client = OpenAI(api_key=API_KEY)
             res_prompt = f"""
             Industry: {industry}. Brand: {business_name}. Topic: '{seed_topic}'. 
-            Analyze these competitor links to find content gaps: {competitor_links}.
-            Action: Generate 3 High-CTR Headlines, 1 Primary Keyword, 5 Secondary, 10 LSI, and a deep H2-H4 outline that outperforms them.
-            RULES: Never mention competitor names. Return JSON: {{'headlines': [], 'primary': '', 'secondary': [], 'lsi': [], 'structure_text': ''}}
+            Competitors: {competitor_links}.
+            Action: Generate 3 High-CTR Magnetic Headlines (Front-load keyword, use numbers, power words, and [2026 Guide]).
+            Provide 1 Primary Keyword, 5 Secondary, 10 LSI, and a deep H2-H4 outline designed to outrank competitors by filling 'content gaps'.
+            Return JSON: {{'headlines': [], 'primary': '', 'secondary': [], 'lsi': [], 'structure_text': ''}}
             """
             with st.spinner("⏳ Analyzing search landscape and competitors..."):
                 response = client.chat.completions.create(
@@ -186,11 +184,11 @@ with col_r:
 
 col_opt1, col_opt2 = st.columns(2)
 with col_opt1:
-    num_images = st.slider("Number of Images needed", 1, 3, 2)
-    include_infographic = st.checkbox("Include Educational Step-by-Step Infographic", value=True)
+    num_images = st.slider("Number of Images needed", 1, 3, 1)
+    include_infographic = st.checkbox("Include Educational Infographic/Checklist", value=True)
 with col_opt2:
     search_intent = st.selectbox("Search Intent", ["Informational", "Transactional", "Commercial"])
-    word_count_goal = st.select_slider("Target Words", options=word_options, value=sidebar_word_count)
+    st.info(f"💡 Target Words: **{sidebar_word_count}** (from sidebar)")
 
 if st.button("✨ GENERATE HUMANIZED ELITE ARTICLE"):
     if not final_h1 or not primary_k:
@@ -198,27 +196,45 @@ if st.button("✨ GENERATE HUMANIZED ELITE ARTICLE"):
     else:
         try:
             client = OpenAI(api_key=API_KEY)
-            with st.spinner(f"⏳ Synthesizing content and {num_images} realistic banners..."):
-                infographic_instr = "Include a 'Step-by-Step Educational Infographic' section styled as an HTML block with a distinct background-color." if include_infographic else ""
+            with st.spinner(f"⏳ Synthesizing elite content and {num_images} photorealistic banners..."):
                 
-                user_p = f"Write unique human-grade article for {business_name} in {language}. Title: {final_h1}. Words: {word_count_goal}. Intent: {search_intent}. Structure: {headings_k}. {infographic_instr} No em-dashes. 2 .gov links. 3 FAQs. Use <strong> and <u>. Return JSON: {{'meta_title': '', 'meta_description': '', 'article_html': ''}}"
+                user_p = f"""
+                You are a world-class SEO content writer. 
+                Task: Write a master-level article for {business_name} in {language}.
+                Word count: {sidebar_word_count}. Intent: {search_intent}. 
+                H1 Title: {final_h1}. Structure: {headings_k}.
+                
+                BYNDER & LOWFRUITS STRATEGY RULES:
+                1. Start with a <div class='key-takeaways'><strong>Key Highlights:</strong> [Bullet points of what reader will learn]</div> immediately after H1.
+                2. Scannability: Max 3-4 sentences per paragraph. Use bullet points and numbered lists for every 200 words of text.
+                3. Content Depth: Use "Skyscraper" technique. Solve the user's problem completely.
+                4. Formatting: Bold primary/secondary keywords naturally. Use <blockquote> for expert quotes.
+                5. Links: Include 2 relevant .gov/.edu/high-authority external links.
+                6. FAQ: Use PAA (People Also Ask) style.
+                7. { "Include a visual Step-by-Step educational block." if include_infographic else "" }
+                
+                META RULES: 
+                - 'meta_title': 50-60 chars, front-load "{primary_k}", use [2026].
+                - 'meta_description': 150 chars max, compelling CTA.
+                Return ONLY JSON: {{'meta_title': '', 'meta_description': '', 'article_html': ''}}
+                """
                 
                 response = client.chat.completions.create(
                     model="gpt-4o",
-                    messages=[{"role": "system", "content": "Professional SEO journalist."}, {"role": "user", "content": user_p}],
+                    messages=[{"role": "system", "content": f"You specialize in {industry} high-engagement SEO writing."}, {"role": "user", "content": user_p}],
                     response_format={"type": "json_object"}
                 )
                 gen_data = json.loads(response.choices[0].message.content)
                 
                 img_urls = []
                 for i in range(num_images):
-                    v_prompt = f"Authentic professional high-end photography of {final_h1} in {industry}, variant {i+1}. Natural light, real textures, no AI look, high quality."
+                    v_prompt = f"Authentic professional real-world photography of {final_h1}. Natural lighting, professional setting, hyper-realistic, sharp focus, no text."
                     img_res = client.images.generate(model="dall-e-3", prompt=v_prompt, size="1792x1024", quality="hd")
                     img_urls.append(img_res.data[0].url)
                 
                 gen_data["image_urls"] = img_urls
                 st.session_state.generated_data = gen_data
-                st.success("Article Generated!")
+                st.success("Elite Article Generated with High-Engagement Layout!")
         except Exception as e: st.error(f"Error: {e}")
 
 if st.session_state.generated_data:
@@ -226,7 +242,7 @@ if st.session_state.generated_data:
     st.divider()
     
     st.markdown("<div class='deliverable-card'>", unsafe_allow_html=True)
-    st.subheader("📋 Meta Information")
+    st.subheader("📋 SEO & CTR Optimized Meta Data")
     m1, m2 = st.columns(2)
     fh = 100
     with m1:
@@ -240,12 +256,12 @@ if st.session_state.generated_data:
     st.markdown("</div>", unsafe_allow_html=True)
 
     st.markdown("<div class='deliverable-card'>", unsafe_allow_html=True)
-    st.subheader("📄 Content Preview")
+    st.subheader("📄 Interactive Content Preview")
     st.markdown(f"<div class='rendered-content'>{data.get('article_html', '')}</div>", unsafe_allow_html=True)
     st.markdown("</div>", unsafe_allow_html=True)
 
     if "image_urls" in data:
-        st.subheader(f"🖼️ Realistic Banners ({num_images} total)")
+        st.subheader(f"🖼️ Realistic Banners ({len(data['image_urls'])} total)")
         for idx, url in enumerate(data["image_urls"]):
             st.markdown(f'<div class="banner-container"><img src="{url}"></div>', unsafe_allow_html=True)
             img_bytes = download_image_bytes(url)
@@ -253,13 +269,14 @@ if st.session_state.generated_data:
                 st.download_button(label=f"📥 Download Banner {idx+1}", data=img_bytes, file_name=f"banner_{idx+1}.jpg", mime="image/jpeg", key=f"dl_i_{idx}")
 
     st.markdown("<div class='deliverable-card'>", unsafe_allow_html=True)
-    st.subheader("🛠️ Final Export")
+    st.subheader("🛠️ Final Tools & Export")
     c1, c2 = st.columns(2)
     with c1: copy_to_clipboard(data.get("article_html", ""), "💾 Copy HTML Code", "html", True)
     with c2: copy_to_clipboard(data.get("article_html", ""), "👤 Copy Formatted Text", "rich", False)
-    st.download_button(label="📥 Download Article (HTML File)", data=data.get("article_html", ""), file_name="article.html", mime="text/html", use_container_width=True)
+    st.download_button(label="📥 Download Article (HTML File)", data=data.get("article_html", ""), file_name="seo_article.html", mime="text/html", use_container_width=True)
+    
     actual_words = len(strip_html(data.get("article_html", "")).split())
-    st.markdown(f"<div style='background: #1e293b; color: white; padding: 16px; border-radius: 10px; border-left: 5px solid #3b82f6;'><strong>Audit:</strong> {actual_words} words | <strong>Brand:</strong> {business_name}</div>", unsafe_allow_html=True)
+    st.markdown(f"<div style='background: #1e293b; color: white; padding: 16px; border-radius: 10px; border-left: 5px solid #3b82f6;'><strong>Audit:</strong> {actual_words} words | <strong>Grade:</strong> Elite SEO Content (Humanized)</div>", unsafe_allow_html=True)
     st.markdown("</div>", unsafe_allow_html=True)
 
 st.markdown("<p style='text-align: center; color: #9ca3af; font-size: 11px; margin-top: 60px;'>Elite SEO & GEO Engine | © 2026</p>", unsafe_allow_html=True)

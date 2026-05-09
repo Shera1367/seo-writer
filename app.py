@@ -121,7 +121,6 @@ st.markdown("""
         color: #1e293b !important; 
     }
     
-    /* Table Styling for SEO Performance */
     .data-table-container { overflow-x: auto; margin: 25px 0; }
     .data-table {
         width: 100%;
@@ -144,16 +143,16 @@ st.markdown("""
         color: #1e293b;
     }
     .data-table tr:nth-child(even) { background-color: #f8fafc; }
-    .data-table tr:hover { background-color: #eff6ff; }
 
+    /* INFOGRAPHIC STYLING */
     .visual-infographic {
         background: #f8fafc;
         border: 2px dashed #3b82f6;
         padding: 25px;
         border-radius: 15px;
         margin: 30px 0;
-        color: #1e293b !important;
     }
+    .visual-infographic h3 { color: #1e293b !important; margin-top: 0 !important; margin-bottom: 20px !important; }
     .infographic-step {
         display: flex;
         align-items: center;
@@ -162,11 +161,11 @@ st.markdown("""
         background: white;
         border-radius: 10px;
         box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-        color: #1e293b !important;
     }
+    .step-text { color: #1e293b !important; font-weight: 500; font-size: 1.1em; }
     .step-number {
         background: #3b82f6;
-        color: white;
+        color: white !important;
         min-width: 35px;
         height: 35px;
         border-radius: 50%;
@@ -187,7 +186,7 @@ with st.sidebar:
     st.header("⚙️ Global Strategy")
     language = st.selectbox("Language", ["English", "Persian", "Spanish", "French", "German"])
     industry = st.selectbox("Industry", ["Legal", "Medical", "Travel", "Real Estate", "Technology", "Finance", "E-commerce"])
-    business_name = st.text_input("Business Name", placeholder="e.g. Deldar Legal")
+    business_name = st.text_input("Business Name", placeholder="e.g. My Agency")
     business_url = st.text_input("Business Website URL", placeholder="e.g. https://yoursite.com")
     target_audience = st.text_input("Target Audience", placeholder="e.g. Local customers")
     st.divider()
@@ -254,40 +253,60 @@ if st.button("✨ GENERATE HUMANIZED ELITE ARTICLE"):
     else:
         try:
             client = OpenAI(api_key=API_KEY)
-            with st.spinner(f"⏳ Synthesizing elite content and {num_images} photorealistic banners..."):
+            with st.spinner(f"⏳ Synthesizing elite deep-dive content..."):
                 
-                table_instr = "MANDATORY: Include a comparison or statistics table wrapped in <div class='data-table-container'><table class='data-table'>...</table></div> summarizing key data or facts." if include_table else ""
-                info_instr = "MANDATORY: Include a visual infographic section using <div class='visual-infographic'>...</div>." if include_infographic else ""
+                table_instr = "MANDATORY: Include a detailed comparison table using: <div class='data-table-container'><table class='data-table'>...</table></div>." if include_table else ""
+                
+                info_instr = ""
+                if include_infographic:
+                    info_instr = """
+                    MANDATORY: Include a 'Visual Infographic' section. 
+                    DO NOT USE <img> TAGS. Use this EXACT HTML structure:
+                    <div class='visual-infographic'>
+                        <h3>Process Overview</h3>
+                        <div class='infographic-step'><div class='step-number'>1</div><div class='step-text'>Step Description</div></div>
+                        ...
+                    </div>
+                    """
 
                 user_p = f"""
-                Write master-level SEO article for {business_name} in {language}. Words: {sidebar_word_count}. Intent: {search_intent}. 
-                H1 Title: {final_h1}. Structure: {headings_k}. Website: {business_url}.
+                Write a MASTER-LEVEL, high-authority SEO article for {business_name} in {language}. 
+                Target Words: {sidebar_word_count} (MANDATORY: You must hit this word count).
+                Intent: {search_intent}. 
+                H1 Title: {final_h1}. 
+                Structure provided: {headings_k}. 
+                Website: {business_url}.
                 
-                RULES:
-                - No labels like "H1:", "H2:". Use tags <h1>, <h2>.
-                - Start with <div class='key-takeaways'><strong>Key Highlights:</strong> [Bullets]</div>.
+                CRITICAL DEPTH RULES:
+                - EVERY H2, H3, and H4 heading MUST be followed by at least 150-200 words of substantial, informative text.
+                - DO NOT write one-sentence explanations. 
+                - Deep-dive into the "Why" and "How". Provide actionable advice and expert insights.
+                - Paragraphs should be concise (2-4 sentences) but MUST be numerous to build total depth.
+                - Use a humanized, authoritative first-person perspective (as an expert from {business_name}).
+                
+                STRICT FORMATTING:
+                - No labels like "H1:", "H2:". Use raw <h1>, <h2> tags.
                 - {table_instr}
                 - {info_instr}
-                - Paragraphs < 3 sentences. Use lists every 250 words.
-                - Professional, authoritative first-person tone.
-                - CTA at the end with {business_url}.
+                - Start with <div class='key-takeaways'><strong>Key Highlights:</strong> [List]</div>.
+                - CTA at end with {business_url}.
                 
                 META:
-                - 'meta_title': 50-60 chars, front-load "{primary_k}", use [2026].
+                - 'meta_title': 50-60 chars, front-load "{primary_k}".
                 - 'meta_description': 150 chars max.
                 Return ONLY JSON: {{'meta_title': '', 'meta_description': '', 'article_html': ''}}
                 """
                 
                 response = client.chat.completions.create(
                     model="gpt-4o",
-                    messages=[{"role": "system", "content": "SEO Master Writer. Expert in Scannable HTML content."}, {"role": "user", "content": user_p}],
+                    messages=[{"role": "system", "content": "SEO Master Writer. Expert in clean HTML and CSS-based visual layouts."}, {"role": "user", "content": user_p}],
                     response_format={"type": "json_object"}
                 )
                 gen_data = json.loads(response.choices[0].message.content)
                 
                 img_urls = []
                 for i in range(num_images):
-                    v_prompt = f"PHOTOREALISTIC high-end photography of {final_h1} in {industry} context. Natural light, sharp textures, real environment, no cartoon, 8k DSLR."
+                    v_prompt = f"PHOTOREALISTIC high-end photography of {final_h1} in {industry} context. Natural light, real environment, 8k DSLR, no text."
                     img_res = client.images.generate(model="dall-e-3", prompt=v_prompt, size="1792x1024", quality="hd")
                     img_urls.append(img_res.data[0].url)
                 
@@ -303,14 +322,13 @@ if st.session_state.generated_data:
     st.markdown("<div class='deliverable-card'>", unsafe_allow_html=True)
     st.subheader("📋 SEO Meta Data")
     m1, m2 = st.columns(2)
-    fh = 100
     with m1:
         st.write("**Meta Title**")
-        st.text_area("Title", value=data.get("meta_title", ""), height=fh, label_visibility="collapsed", key="mt_disp")
+        st.text_area("Title", value=data.get("meta_title", ""), height=100, label_visibility="collapsed", key="mt_disp")
         copy_to_clipboard(data.get("meta_title", ""), "📋 Copy Title", "mt", True)
     with m2:
         st.write("**Meta Description**")
-        st.text_area("Desc", value=data.get("meta_description", ""), height=fh, label_visibility="collapsed", key="md_disp")
+        st.text_area("Desc", value=data.get("meta_description", ""), height=100, label_visibility="collapsed", key="md_disp")
         copy_to_clipboard(data.get("meta_description", ""), "📋 Copy Desc", "md", True)
     st.markdown("</div>", unsafe_allow_html=True)
 

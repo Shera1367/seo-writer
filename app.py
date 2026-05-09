@@ -17,7 +17,6 @@ st.set_page_config(
 
 try:
     OPENAI_API_KEY = st.secrets["OPENAI_API_KEY"]
-    # Ensure both keys are in Streamlit Secrets
     GOOGLE_API_KEY = st.secrets["GOOGLE_API_KEY"]
 except Exception:
     st.error("❌ API Keys missing! Please add 'OPENAI_API_KEY' and 'GOOGLE_API_KEY' to Streamlit Secrets.")
@@ -29,10 +28,14 @@ def strip_html(html_string):
     return re.sub(clean, '', html_string)
 
 def generate_google_image(prompt):
-    """Rewritten Google Imagen 4.0 generator with robust parsing."""
+    """Rewritten Google Imagen 4.0 generator with grid/collage prevention."""
     url = f"https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict?key={GOOGLE_API_KEY}"
+    
+    # Enhanced prompt to stop multi-panel/grid results
+    final_prompt = f"{prompt}. Single unified frame, one single scene, no grid, no collage, no split screen, no multi-panel, professional 35mm photography."
+    
     payload = {
-        "instances": [{"prompt": prompt}],
+        "instances": [{"prompt": final_prompt}],
         "parameters": {"sampleCount": 1}
     }
     
@@ -40,7 +43,6 @@ def generate_google_image(prompt):
         response = requests.post(url, json=payload, timeout=60)
         if response.status_code == 200:
             result = response.json()
-            # Google's model returns data in a predictions list
             if 'predictions' in result and len(result['predictions']) > 0:
                 img_data = result['predictions'][0]['bytesBase64Encoded']
                 return f"data:image/png;base64,{img_data}"
@@ -96,18 +98,20 @@ st.markdown("""
     }
     .banner-container img { width: 100%; height: auto; display: block; }
     .rendered-content h1 { color: #111827 !important; font-weight: 800; border-bottom: 2px solid #3b82f6; padding-bottom: 10px; }
-    .rendered-content h2 { color: #1f2937 !important; margin-top: 30px; font-weight: 700; }
+    .rendered-content h2 { color: #1f2937 !important; margin-top: 35px; font-weight: 700; border-left: 5px solid #3b82f6; padding-left: 15px; }
     .rendered-content h3 { color: #374151 !important; margin-top: 25px; font-weight: 600; }
-    .rendered-content p { line-height: 1.8; color: #374151 !important; margin-bottom: 20px; }
+    .rendered-content p { line-height: 1.9; color: #374151 !important; margin-bottom: 20px; font-size: 1.05em; }
     .key-takeaways { background: #f0f7ff; border-left: 5px solid #007bff; padding: 20px; border-radius: 8px; margin: 20px 0; color: #1e293b !important; }
     .data-table-container { overflow-x: auto; margin: 25px 0; }
     .data-table { width: 100%; border-collapse: collapse; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
     .data-table th { background-color: #3b82f6; color: white; padding: 15px; text-align: left; }
     .data-table td { padding: 12px 15px; border-bottom: 1px solid #e5e7eb; color: #1e293b !important; }
+    
+    /* Strict Infographic CSS */
     .visual-infographic { background: #f8fafc; border: 2px dashed #3b82f6; padding: 25px; border-radius: 15px; margin: 30px 0; }
     .infographic-step { display: flex; align-items: center; margin-bottom: 15px; padding: 15px; background: white; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
-    .step-text { color: #1e293b !important; font-weight: 500; font-size: 1.1em; }
-    .step-number { background: #3b82f6; color: white !important; min-width: 35px; height: 35px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 15px; font-weight: 900; }
+    .step-text { color: #1e293b !important; font-weight: 600; font-size: 1.1em; }
+    .step-number { background: #3b82f6; color: white !important; min-width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 15px; font-weight: 900; font-size: 1.2em; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -192,45 +196,57 @@ if st.button("✨ GENERATE HUMANIZED ELITE ARTICLE"):
             
             # Phase 1: Article Generation
             with st.spinner(f"⏳ Synthesizing master-level SEO content..."):
-                table_instr = "MANDATORY: Include a comparison table wrapping it in <div class='data-table-container'><table class='data-table'>...</table></div>." if include_table else ""
-                info_instr = "MANDATORY: Include a 'Visual Infographic' section using ONLY CSS-styled boxes (no <img> tags) with class 'visual-infographic' and 'infographic-step'." if include_infographic else ""
+                table_instr = "MANDATORY: Include a detailed data table using <table class='data-table'>." if include_table else ""
+                
+                # Concrete Example for Infographic to ensure formatting
+                info_instr = ""
+                if include_infographic:
+                    info_instr = """
+                    MANDATORY: You must include a 'Visual Infographic' section. 
+                    Structure MUST be EXACTLY like this:
+                    <div class='visual-infographic'>
+                        <h3>Process Overview</h3>
+                        <div class='infographic-step'><div class='step-number'>1</div><div class='step-text'>Detailed Description</div></div>
+                        <div class='infographic-step'><div class='step-number'>2</div><div class='step-text'>Detailed Description</div></div>
+                    </div>
+                    """
 
                 user_p = f"""
-                Write a deep-dive SEO article for {business_name} in {language}. Words: {sidebar_word_count}. Intent: {search_intent}. 
+                Write a comprehensive expert article for {business_name} in {language}. Words: {sidebar_word_count}. Intent: {search_intent}. 
                 H1 Title: {final_h1}. Structure: {headings_k}. Website: {business_url}.
                 
                 CRITICAL INSTRUCTIONS:
-                - EVERY heading MUST be followed by significant informative text (min 150 words per H2).
-                - Use exactly 2 outbound links to .gov or .edu sources.
+                - EVERY H2 heading MUST have at least 200 words of substance.
+                - Use 2 authority links (.gov or .edu).
                 - Start with <div class='key-takeaways'><strong>Key Highlights:</strong> [List]</div>.
                 - {table_instr}
                 - {info_instr}
-                - Professional tone, actionable expert advice.
-                - END with a strong CTA mentioning {business_url}.
                 - ABSOLUTELY NO Markdown hashtags (e.g., #, ##). Use ONLY raw <h1>, <h2>, <h3> tags.
+                - Professional, authoritative expert perspective.
+                - END with a high-conversion CTA mentioning {business_url}.
                 
                 Return JSON: {{'meta_title': '', 'meta_description': '', 'article_html': ''}}
                 """
                 
                 response = openai_client.chat.completions.create(
                     model="gpt-4o",
-                    messages=[{"role": "system", "content": "Master SEO Journalist. You only output pure HTML."}, {"role": "user", "content": user_p}],
+                    messages=[{"role": "system", "content": "Professional SEO Content Specialist. You produce clean HTML ONLY."}, {"role": "user", "content": user_p}],
                     response_format={"type": "json_object"}
                 )
                 article_data = json.loads(response.choices[0].message.content)
 
             img_data_urls = []
             if num_images > 0:
-                img_status = st.status(f"📸 Requesting {num_images} banners from Google Imagen 4.0...", expanded=True)
+                img_status = st.status(f"📸 Generating {num_images} high-end banners with Google Imagen 4.0...", expanded=True)
                 for i in range(num_images):
                     img_status.write(f"Generating image {i+1} of {num_images}...")
-                    v_prompt = f"Authentic professional photography for {final_h1} in {industry} field. Shot on 35mm DSLR, natural light, real textures, professional high-end environment. Sharp focus, no text, no illustration."
+                    v_prompt = f"Professional authentic high-end photography for {final_h1} in {industry}. Shot on 35mm DSLR, natural light, real textures, sharp focus. Single composition scene, NO grid, NO collage, NO panels, NO multi-panel."
                     data_url = generate_google_image(v_prompt)
                     if data_url:
                         img_data_urls.append(data_url)
                     else:
-                        img_status.write(f"⚠️ Image {i+1} failed. Check Google API Key and quotas.")
-                img_status.update(label="✅ Image processing complete!", state="complete", expanded=False)
+                        img_status.write(f"⚠️ Image {i+1} failed.")
+                img_status.update(label="✅ Images processed!", state="complete", expanded=False)
             
             if img_data_urls:
                 embedded_images_html = "<hr><h2>Professional Visuals</h2>"
@@ -240,7 +256,7 @@ if st.button("✨ GENERATE HUMANIZED ELITE ARTICLE"):
             
             article_data["image_urls"] = img_data_urls
             st.session_state.generated_data = article_data
-            st.success("Elite Article and Imagery Ready!")
+            st.success("Elite Article and Single-Frame Imagery Ready!")
             
         except Exception as e: st.error(f"Error during generation: {e}")
 
@@ -267,7 +283,7 @@ if st.session_state.generated_data:
     st.markdown("<div class='deliverable-card'>", unsafe_allow_html=True)
     st.subheader("🛠️ Export & Download")
     c1, c2 = st.columns(2)
-    with c1: copy_to_clipboard(data.get("article_html", ""), "💾 Copy HTML (Images Included)", "html", True)
+    with c1: copy_to_clipboard(data.get("article_html", ""), "💾 Copy HTML (Full Content)", "html", True)
     with c2: copy_to_clipboard(data.get("article_html", ""), "👤 Copy Formatted Text", "rich", False)
     
     st.download_button(
@@ -279,7 +295,7 @@ if st.session_state.generated_data:
     )
     
     if "image_urls" in data and len(data["image_urls"]) > 0:
-        st.write("**Download Original Banners:**")
+        st.write("**Original High-Res Banners:**")
         cols = st.columns(len(data["image_urls"]))
         for idx, url in enumerate(data["image_urls"]):
             with cols[idx]:

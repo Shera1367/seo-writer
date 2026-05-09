@@ -235,8 +235,9 @@ if st.button("✨ GENERATE HUMANIZED ELITE ARTICLE"):
     else:
         try:
             openai_client = OpenAI(api_key=OPENAI_API_KEY)
-            with st.spinner(f"⏳ Synthesizing master-level content and banners..."):
-                
+            
+            # Phase 1: Article Generation
+            with st.spinner(f"⏳ Synthesizing master-level SEO content..."):
                 table_instr = "MANDATORY: Include a comparison table wrapping it in <div class='data-table-container'><table class='data-table'>...</table></div>." if include_table else ""
                 info_instr = "MANDATORY: Include a 'Visual Infographic' section using ONLY CSS-styled boxes (no <img> tags) with class 'visual-infographic' and 'infographic-step'." if include_infographic else ""
 
@@ -264,28 +265,37 @@ if st.button("✨ GENERATE HUMANIZED ELITE ARTICLE"):
                 
                 response = openai_client.chat.completions.create(
                     model="gpt-4o",
-                    messages=[{"role": "system", "content": "Master SEO Journalist. You only output pure HTML for the article body and never use Markdown syntax."}, {"role": "user", "content": user_p}],
+                    messages=[{"role": "system", "content": "Master SEO Journalist. You only output pure HTML for the article body."}, {"role": "user", "content": user_p}],
                     response_format={"type": "json_object"}
                 )
                 article_data = json.loads(response.choices[0].message.content)
-                
-                # Image generation and direct embedding
-                img_data_urls = []
-                embedded_images_html = "<hr><h2>Visual Assets</h2>"
+
+            # Phase 2: Targeted Image Generation with Visual Progress
+            img_data_urls = []
+            if num_images > 0:
+                img_status = st.status(f"📸 Generating {num_images} photorealistic banners using Google Imagen 4.0...", expanded=True)
                 for i in range(num_images):
-                    v_prompt = f"Authentic professional photography for {final_h1}. 35mm DSLR, natural light, realistic textures, professional environment. No text."
+                    img_status.write(f"Generating image {i+1} of {num_images}...")
+                    v_prompt = f"Authentic professional photography for {final_h1} in {industry} field. 35mm DSLR, natural light, realistic textures, professional environment. No text."
                     data_url = generate_google_image(v_prompt)
                     if data_url:
                         img_data_urls.append(data_url)
-                        embedded_images_html += f'<div class="banner-container"><img src="{data_url}"></div>'
-                
-                # Append images to the main HTML
+                    else:
+                        img_status.write(f"⚠️ Image {i+1} failed to generate. Retrying or skipping...")
+                img_status.update(label="✅ All images processed!", state="complete", expanded=False)
+            
+            # Embed images if they exist
+            if img_data_urls:
+                embedded_images_html = "<hr><h2>Visual Assets</h2>"
+                for url in img_data_urls:
+                    embedded_images_html += f'<div class="banner-container"><img src="{url}"></div>'
                 article_data["article_html"] += embedded_images_html
-                article_data["image_urls"] = img_data_urls
-                
-                st.session_state.generated_data = article_data
-                st.success("Article Generated with Embedded Google Imagen 4.0 Banners!")
-        except Exception as e: st.error(f"Error: {e}")
+            
+            article_data["image_urls"] = img_data_urls
+            st.session_state.generated_data = article_data
+            st.success("Elite Article Generated with Embedded Banners!")
+            
+        except Exception as e: st.error(f"Error during generation: {e}")
 
 if st.session_state.generated_data:
     data = st.session_state.generated_data
@@ -321,7 +331,6 @@ if st.session_state.generated_data:
         use_container_width=True
     )
     
-    # Separate download buttons for individual PNGs
     if "image_urls" in data and len(data["image_urls"]) > 0:
         st.write("**Download Individual Banners:**")
         cols = st.columns(len(data["image_urls"]))

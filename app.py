@@ -112,7 +112,16 @@ st.markdown("""
     .rendered-content h1 { color: #111827; font-weight: 800; border-bottom: 2px solid #3b82f6; padding-bottom: 10px; }
     .rendered-content h2 { color: #1f2937; margin-top: 30px; font-weight: 700; }
     .rendered-content p { line-height: 1.8; color: #374151; margin-bottom: 20px; }
-    .key-takeaways { background: #f0f7ff; border-left: 5px solid #007bff; padding: 20px; border-radius: 8px; margin: 20px 0; }
+    .key-takeaways { 
+        background: #f0f7ff; 
+        border-left: 5px solid #007bff; 
+        padding: 20px; 
+        border-radius: 8px; 
+        margin: 20px 0; 
+        color: #1e293b !important; 
+    }
+    .key-takeaways strong { color: #1e293b !important; }
+    .key-takeaways ul li { color: #1e293b !important; margin-bottom: 8px; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -124,7 +133,7 @@ with st.sidebar:
     st.header("⚙️ Global Strategy")
     language = st.selectbox("Language", ["English", "Persian", "Spanish", "French", "German"])
     industry = st.selectbox("Industry", ["Legal", "Medical", "Travel", "Real Estate", "Technology", "Finance", "E-commerce"])
-    business_name = st.text_input("Business Name", placeholder="e.g. site.com")
+    business_name = st.text_input("Business Name", placeholder="e.g. Deldar Legal")
     target_audience = st.text_input("Target Audience", placeholder="e.g. Accident victims in CA")
     st.divider()
     sidebar_word_count = st.select_slider("Target Words (Global)", options=word_options, value=1000)
@@ -150,10 +159,10 @@ if st.button("🔍 START RESEARCH & ANALYSIS"):
             Industry: {industry}. Brand: {business_name}. Topic: '{seed_topic}'. 
             Competitors: {competitor_links}.
             Action: Generate 3 High-CTR Magnetic Headlines (Front-load keyword, use numbers, power words, and [2026 Guide]).
-            Provide 1 Primary Keyword, 5 Secondary, 10 LSI, and a deep H2-H4 outline designed to outrank competitors by filling 'content gaps'.
+            Provide 1 Primary Keyword, 5 Secondary, 10 LSI, and a deep H2-H4 outline.
             Return JSON: {{'headlines': [], 'primary': '', 'secondary': [], 'lsi': [], 'structure_text': ''}}
             """
-            with st.spinner("⏳ Analyzing search landscape and competitors..."):
+            with st.spinner("⏳ Analyzing search landscape..."):
                 response = client.chat.completions.create(
                     model="gpt-4o",
                     messages=[{"role": "user", "content": res_prompt}],
@@ -188,7 +197,7 @@ with col_opt1:
     include_infographic = st.checkbox("Include Educational Infographic/Checklist", value=True)
 with col_opt2:
     search_intent = st.selectbox("Search Intent", ["Informational", "Transactional", "Commercial"])
-    st.info(f"💡 Target Words: **{sidebar_word_count}** (from sidebar)")
+    st.info(f"💡 Target Words: **{sidebar_word_count}**")
 
 if st.button("✨ GENERATE HUMANIZED ELITE ARTICLE"):
     if not final_h1 or not primary_k:
@@ -204,37 +213,38 @@ if st.button("✨ GENERATE HUMANIZED ELITE ARTICLE"):
                 Word count: {sidebar_word_count}. Intent: {search_intent}. 
                 H1 Title: {final_h1}. Structure: {headings_k}.
                 
-                BYNDER & LOWFRUITS STRATEGY RULES:
-                1. Start with a <div class='key-takeaways'><strong>Key Highlights:</strong> [Bullet points of what reader will learn]</div> immediately after H1.
-                2. Scannability: Max 3-4 sentences per paragraph. Use bullet points and numbered lists for every 200 words of text.
-                3. Content Depth: Use "Skyscraper" technique. Solve the user's problem completely.
-                4. Formatting: Bold primary/secondary keywords naturally. Use <blockquote> for expert quotes.
-                5. Links: Include 2 relevant .gov/.edu/high-authority external links.
-                6. FAQ: Use PAA (People Also Ask) style.
-                7. { "Include a visual Step-by-Step educational block." if include_infographic else "" }
+                STRICT CLEANING RULES:
+                - DO NOT include "H1:", "H2:", or "H3:" text labels inside the content or tags.
+                - Use only <h1>, <h2>, <h3> tags to define headers. Example: <h2>Title</h2>, NOT <h2>H2: Title</h2>.
+                
+                STRATEGY RULES:
+                1. Start with a <div class='key-takeaways'><strong>Key Highlights:</strong> [Bullet points]</div> after H1.
+                2. Scannability: Max 3 sentences per paragraph. Use lists for every 200 words.
+                3. Links: Include 2 relevant .gov/.edu sources.
+                4. Humanize: Vary sentence length. Use professional first-person expert tone.
                 
                 META RULES: 
                 - 'meta_title': 50-60 chars, front-load "{primary_k}", use [2026].
-                - 'meta_description': 150 chars max, compelling CTA.
+                - 'meta_description': 150 chars max.
                 Return ONLY JSON: {{'meta_title': '', 'meta_description': '', 'article_html': ''}}
                 """
                 
                 response = client.chat.completions.create(
                     model="gpt-4o",
-                    messages=[{"role": "system", "content": f"You specialize in {industry} high-engagement SEO writing."}, {"role": "user", "content": user_p}],
+                    messages=[{"role": "system", "content": f"Expert in {industry} writing. Strictly follow HTML rules."}, {"role": "user", "content": user_p}],
                     response_format={"type": "json_object"}
                 )
                 gen_data = json.loads(response.choices[0].message.content)
                 
                 img_urls = []
                 for i in range(num_images):
-                    v_prompt = f"Authentic professional real-world photography of {final_h1}. Natural lighting, professional setting, hyper-realistic, sharp focus, no text."
+                    v_prompt = f"Authentic professional real-world photography of {final_h1}. Natural lighting, professional setting, hyper-realistic, no text."
                     img_res = client.images.generate(model="dall-e-3", prompt=v_prompt, size="1792x1024", quality="hd")
                     img_urls.append(img_res.data[0].url)
                 
                 gen_data["image_urls"] = img_urls
                 st.session_state.generated_data = gen_data
-                st.success("Elite Article Generated with High-Engagement Layout!")
+                st.success("Elite Article Generated!")
         except Exception as e: st.error(f"Error: {e}")
 
 if st.session_state.generated_data:
@@ -242,7 +252,7 @@ if st.session_state.generated_data:
     st.divider()
     
     st.markdown("<div class='deliverable-card'>", unsafe_allow_html=True)
-    st.subheader("📋 SEO & CTR Optimized Meta Data")
+    st.subheader("📋 SEO Meta Data")
     m1, m2 = st.columns(2)
     fh = 100
     with m1:
@@ -276,7 +286,7 @@ if st.session_state.generated_data:
     st.download_button(label="📥 Download Article (HTML File)", data=data.get("article_html", ""), file_name="seo_article.html", mime="text/html", use_container_width=True)
     
     actual_words = len(strip_html(data.get("article_html", "")).split())
-    st.markdown(f"<div style='background: #1e293b; color: white; padding: 16px; border-radius: 10px; border-left: 5px solid #3b82f6;'><strong>Audit:</strong> {actual_words} words | <strong>Grade:</strong> Elite SEO Content (Humanized)</div>", unsafe_allow_html=True)
+    st.markdown(f"<div style='background: #1e293b; color: white; padding: 16px; border-radius: 10px; border-left: 5px solid #3b82f6;'><strong>Audit:</strong> {actual_words} words | <strong>Grade:</strong> Elite Content Strategy</div>", unsafe_allow_html=True)
     st.markdown("</div>", unsafe_allow_html=True)
 
-st.markdown("<p style='text-align: center; color: #9ca3af; font-size: 11px; margin-top: 60px;'>Elite SEO & GEO Engine | © 2026</p>", unsafe_allow_html=True)
+st.markdown("<p style='text-align: center; color: #9ca3af; font-size: 11px; margin-top: 60px;'>Elite SEO & GEO Engine | Powered by OpenAI | © 2026</p>", unsafe_allow_html=True)

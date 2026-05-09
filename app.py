@@ -124,7 +124,7 @@ with st.sidebar:
     st.header("⚙️ Global Strategy")
     language = st.selectbox("Language", ["English", "Persian", "Spanish", "French", "German"])
     industry = st.selectbox("Industry", ["Legal", "Medical", "Travel", "Real Estate", "Technology", "Finance", "E-commerce"])
-    business_name = st.text_input("Business Name", placeholder="e.g. Deldar Legal")
+    business_name = st.text_input("Business Name", placeholder="e.g. site.com")
     target_audience = st.text_input("Target Audience", placeholder="e.g. Accident victims in CA")
     st.divider()
     sidebar_word_count = st.select_slider("Target Words (Global)", options=word_options, value=1000)

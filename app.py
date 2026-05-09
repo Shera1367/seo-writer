@@ -47,9 +47,11 @@ def copy_to_clipboard(content, button_label="Copy", key_suffix="", is_html=False
         """
     html_button = f"""
     <button id="copyBtn{key_suffix}" style="
-        background-color: #007bff; color: white; border: none; padding: 6px 14px; 
-        border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600;
-        margin-bottom: 8px; transition: all 0.2s;
+        background-color: #007bff; color: white; border: none; padding: 8px 16px; 
+        border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: 600;
+        margin-bottom: 8px; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        display: flex; align-items: center; justify-content: center; width: 100%;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.05);
         ">
         {button_label}
     </button>
@@ -65,12 +67,71 @@ def copy_to_clipboard(content, button_label="Copy", key_suffix="", is_html=False
     }}
     </script>
     """
-    components.html(html_button, height=45)
+    components.html(html_button, height=48)
 
 if "research_data" not in st.session_state:
     st.session_state.research_data = None
 if "generated_data" not in st.session_state:
     st.session_state.generated_data = None
+
+st.markdown("""
+<style>
+    /* Main container styling */
+    .main { background-color: #f9fafb; }
+    
+    /* Card-like containers for strategy and deliverables */
+    .deliverable-card {
+        background-color: #ffffff;
+        padding: 24px;
+        border-radius: 12px;
+        border: 1px solid #e5e7eb;
+        margin-bottom: 20px;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+    }
+    
+    /* Header styling */
+    .section-header {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: #111827;
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+    }
+    
+    /* Keyword pill styling */
+    .keyword-pill {
+        display: inline-block;
+        background: #eff6ff;
+        color: #1d4ed8;
+        padding: 4px 12px;
+        border-radius: 20px;
+        margin: 4px;
+        font-size: 12px;
+        font-weight: 600;
+        border: 1px solid #dbeafe;
+    }
+    
+    /* Styling Streamlit buttons */
+    .stButton>button {
+        width: 100%;
+        border-radius: 10px;
+        height: 3.5em;
+        background-color: #2563eb;
+        color: white;
+        font-weight: 700;
+        border: none;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        transition: transform 0.1s;
+    }
+    .stButton>button:active { transform: scale(0.98); }
+    
+    /* Formatting headings in markdown preview */
+    .rendered-content h1 { color: #111827; font-weight: 800; }
+    .rendered-content h2 { color: #1f2937; margin-top: 1.5em; border-bottom: 1px solid #f3f4f6; padding-bottom: 0.3em; }
+    
+</style>
+""", unsafe_allow_html=True)
 
 try:
     API_KEY = st.secrets["OPENAI_API_KEY"]
@@ -78,27 +139,8 @@ except KeyError:
     st.error("Error: OPENAI_API_KEY not found in Streamlit Secrets.")
     st.stop()
 
-st.markdown("""
-<style>
-    .main { background-color: #fcfcfc; }
-    .stButton>button {
-        width: 100%; border-radius: 10px; height: 3.5em;
-        background-color: #28a745; color: white; font-weight: bold;
-        border: none; box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-    }
-    .research-box { 
-        background-color: #ffffff; padding: 25px; border-radius: 15px; 
-        border: 1px solid #eee; margin-bottom: 20px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05);
-    }
-    .keyword-pill {
-        display: inline-block; background: #f0f7ff; color: #007bff;
-        padding: 5px 15px; border-radius: 25px; margin: 5px; font-size: 12px; font-weight: 600;
-        border: 1px solid #d0e4ff;
-    }
-</style>
-""", unsafe_allow_html=True)
-
 st.title("🚀 Elite SEO & GEO Content Engine")
+st.markdown("<p style='color: #6b7280; margin-top: -15px;'>Professional Strategy-First AI Content Platform</p>", unsafe_allow_html=True)
 st.markdown("---")
 
 with st.sidebar:
@@ -117,8 +159,8 @@ with st.sidebar:
 tab_research, tab_generator = st.tabs(["🔍 Phase 1: Deep Research", "✨ Phase 2: Elite Writing Engine"])
 
 with tab_research:
-    st.header("Topic Analysis & Structure Discovery")
-    seed_topic = st.text_input("Enter Main Topic", placeholder="e.g. Dental Implant Benefits for Seniors")
+    st.markdown("<div class='section-header'>Topic Analysis & Structure Discovery</div>", unsafe_allow_html=True)
+    seed_topic = st.text_input("Enter Main Topic Idea", placeholder="e.g. Dental Implant Benefits for Seniors")
     
     if st.button("🔍 START STRATEGIC RESEARCH"):
         if not seed_topic or not business_name:
@@ -153,14 +195,14 @@ with tab_research:
                         response_format={"type": "json_object"}
                     )
                     st.session_state.research_data = json.loads(response.choices[0].message.content)
-                    st.success("Research Complete! Ready for Phase 2.")
+                    st.success("Research Complete! Values transferred to Phase 2.")
             except Exception as e:
                 st.error(f"Research Error: {e}")
 
     if st.session_state.research_data:
         res = st.session_state.research_data
-        st.markdown("<div class='research-box'>", unsafe_allow_html=True)
-        st.subheader("🎯 Research Results")
+        st.markdown("<div class='deliverable-card'>", unsafe_allow_html=True)
+        st.markdown("<div class='section-header'>🎯 Research Results</div>", unsafe_allow_html=True)
         
         st.write("**Magnetic Headlines (Optimized for CTR):**")
         for h in res.get('headlines', []): st.info(h)
@@ -170,7 +212,6 @@ with tab_research:
             st.write("**Primary Keyword**")
             st.code(res.get('primary', ''))
             
-            # Robust split handling to avoid AttributeError
             sec_raw = res.get('secondary', '')
             sec_list = sec_raw.split(',') if isinstance(sec_raw, str) else sec_raw
             st.write("**Secondary Keywords**")
@@ -187,25 +228,25 @@ with tab_research:
         st.markdown("</div>", unsafe_allow_html=True)
 
 with tab_generator:
-    st.header("Elite Content Generator")
+    st.markdown("<div class='section-header'>Elite Content Configuration</div>", unsafe_allow_html=True)
     res = st.session_state.research_data or {}
     
     col1, col2 = st.columns(2)
     with col1:
         article_title = st.text_input("Final H1 Title", value=res.get("headlines", [""])[0] if res else "")
         primary_k = st.text_input("Primary Keyword (Focus)", value=res.get("primary", "") if res else "")
-        secondary_k = st.text_area("Secondary Keywords", value=res.get("secondary", "") if res else "")
+        secondary_k = st.text_area("Secondary Keywords", value=res.get("secondary", "") if res else "", height=100)
     with col2:
-        lsi_k = st.text_area("LSI Keywords", value=res.get("lsi", "") if res else "")
-        headings_k = st.text_area("Heading Hierarchy (H2-H4)", value=res.get("structure_text", "") if res else "", height=150)
-        extra_k = st.text_area("GEO & Instruction Data", placeholder="Specific locations, local laws, or landmarks...")
+        lsi_k = st.text_area("LSI Keywords", value=res.get("lsi", "") if res else "", height=100)
+        headings_k = st.text_area("Heading Hierarchy (H2-H4)", value=res.get("structure_text", "") if res else "", height=100)
+        extra_k = st.text_area("GEO & Local Context", placeholder="Specific neighborhoods, landmarks, or local laws...", height=68)
 
     gen_col1, gen_col2 = st.columns(2)
     with gen_col1:
-        search_intent = st.selectbox("Intent", ["Informational", "Transactional", "Commercial Investigation", "Navigational"])
-        tone = st.selectbox("Tone", ["Professional", "Authoritative", "Conversational", "Technical"])
+        search_intent = st.selectbox("Search Intent", ["Informational", "Transactional", "Commercial Investigation", "Navigational"])
+        tone = st.selectbox("Tone of Voice", ["Professional", "Authoritative", "Conversational", "Technical"])
     with gen_col2:
-        word_count_goal = st.select_slider("Word Count Goal", [500, 1000, 1500, 2000, 2500], value=1000)
+        word_count_goal = st.select_slider("Target Word Count", [500, 1000, 1500, 2000, 2500], value=1000)
 
     if st.button("✨ GENERATE HUMANIZED ELITE ARTICLE"):
         if not article_title or not primary_k:
@@ -236,7 +277,7 @@ with tab_generator:
                 
                 Return JSON: {{"meta_title": "", "meta_description": "", "article_html": ""}}
                 """
-                with st.spinner("⏳ Synthesizing deep-dive content... This takes 60-90 seconds for quality."):
+                with st.spinner("⏳ Synthesizing deep-dive content... This takes 60-90 seconds for high quality."):
                     response = client.chat.completions.create(
                         model="gpt-4o",
                         messages=[{"role": "system", "content": sys_p}, {"role": "user", "content": user_p}],
@@ -251,28 +292,44 @@ with tab_generator:
 if st.session_state.generated_data:
     data = st.session_state.generated_data
     st.divider()
-    st.subheader("📋 Final Deliverables")
     
+    st.markdown("<div class='section-header'>📋 Final Deliverables</div>", unsafe_allow_html=True)
+    
+    # Grid for Meta Tags
+    st.markdown("<div class='deliverable-card'>", unsafe_allow_html=True)
     m1, m2 = st.columns(2)
     with m1:
-        st.write("**Meta Title**")
-        copy_to_clipboard(data.get("meta_title", ""), "Copy", key_suffix="mt", is_html=True)
+        st.markdown("**Meta Title**", unsafe_allow_html=True)
         st.text_input("Edit Meta Title", value=data.get("meta_title", ""), label_visibility="collapsed")
+        copy_to_clipboard(data.get("meta_title", ""), "📋 Copy Title", key_suffix="mt", is_html=True)
     with m2:
-        st.write("**Meta Description**")
-        copy_to_clipboard(data.get("meta_description", ""), "Copy", key_suffix="md", is_html=True)
+        st.markdown("**Meta Description**", unsafe_allow_html=True)
         st.text_area("Edit Meta Description", value=data.get("meta_description", ""), height=68, label_visibility="collapsed")
+        copy_to_clipboard(data.get("meta_description", ""), "📋 Copy Description", key_suffix="md", is_html=True)
+    st.markdown("</div>", unsafe_allow_html=True)
 
-    st.write("**Content Body**")
-    c1, c2, _ = st.columns([1.2, 1.2, 3])
+    # Content Card
+    st.markdown("<div class='deliverable-card'>", unsafe_allow_html=True)
+    st.markdown("**Content Body**", unsafe_allow_html=True)
+    
+    # Actions Row
+    c1, c2, _ = st.columns([1, 1, 2])
     with c1: copy_to_clipboard(data.get("article_html", ""), "💾 Copy HTML Code", key_suffix="html", is_html=True)
     with c2: copy_to_clipboard(data.get("article_html", ""), "👤 Copy Formatted Text", key_suffix="rich", is_html=False)
     
     t_prev, t_code = st.tabs(["👁️ Rendered Preview", "💻 Raw HTML Source"])
-    with t_prev: st.markdown(data.get("article_html", ""), unsafe_allow_html=True)
-    with t_code: st.text_area("Source", value=data.get("article_html", ""), height=400)
+    with t_prev: 
+        st.markdown(f"<div class='rendered-content'>{data.get('article_html', '')}</div>", unsafe_allow_html=True)
+    with t_code: 
+        st.text_area("Source", value=data.get("article_html", ""), height=400, label_visibility="collapsed")
+    st.markdown("</div>", unsafe_allow_html=True)
     
+    # Audit Footer
     actual_words = len(strip_html(data.get("article_html", "")).split())
-    st.markdown(f"**Final Audit:** Actual Word Count: `{actual_words}` | Brand: `{business_name}` | SEO: `Human-Grade Verified` | GEO: `Enabled`")
+    st.markdown(f"""
+    <div style='background: #f3f4f6; padding: 12px; border-radius: 8px; font-size: 13px;'>
+    <strong>Final Audit:</strong> Actual Word Count: <code>{actual_words}</code> | Brand: <code>{business_name}</code> | SEO: <code>Human-Grade Verified</code> | GEO: <code>Enabled</code>
+    </div>
+    """, unsafe_allow_html=True)
 
-st.markdown("<p style='text-align: center; color: grey; font-size: 11px; margin-top: 50px;'>Elite SEO & GEO Engine | Powered by GPT-4o | © 2026</p>", unsafe_allow_html=True)
+st.markdown("<p style='text-align: center; color: #9ca3af; font-size: 11px; margin-top: 60px;'>Elite SEO & GEO Engine | Powered by GPT-4o | © 2026 Professional Content Suite</p>", unsafe_allow_html=True)

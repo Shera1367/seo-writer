@@ -15,13 +15,12 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Configuration for APIs
 try:
     OPENAI_API_KEY = st.secrets["OPENAI_API_KEY"]
-    # The environment provides Google API key automatically via an empty string constant
-    GOOGLE_API_KEY = "" 
+    # Ensure both keys are in Streamlit Secrets
+    GOOGLE_API_KEY = st.secrets["GOOGLE_API_KEY"]
 except Exception:
-    st.error("❌ API Keys not properly configured in Streamlit Secrets.")
+    st.error("❌ API Keys missing! Please add 'OPENAI_API_KEY' and 'GOOGLE_API_KEY' to Streamlit Secrets.")
     st.stop()
 
 def strip_html(html_string):
@@ -30,27 +29,25 @@ def strip_html(html_string):
     return re.sub(clean, '', html_string)
 
 def generate_google_image(prompt):
-    """Generates an image using Google's Imagen 4.0 model with exponential backoff."""
+    """Rewritten Google Imagen 4.0 generator with robust parsing."""
     url = f"https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict?key={GOOGLE_API_KEY}"
     payload = {
         "instances": [{"prompt": prompt}],
         "parameters": {"sampleCount": 1}
     }
     
-    retries = 5
-    for i in range(retries):
-        try:
-            response = requests.post(url, json=payload, timeout=60)
-            if response.status_code == 200:
-                result = response.json()
+    try:
+        response = requests.post(url, json=payload, timeout=60)
+        if response.status_code == 200:
+            result = response.json()
+            # Google's model returns data in a predictions list
+            if 'predictions' in result and len(result['predictions']) > 0:
                 img_data = result['predictions'][0]['bytesBase64Encoded']
                 return f"data:image/png;base64,{img_data}"
-            elif response.status_code in [429, 500, 503]:
-                time.sleep(2**i) 
-            else:
-                break
-        except Exception:
-            time.sleep(2**i)
+        else:
+            st.error(f"Google Image API Error {response.status_code}: {response.text}")
+    except Exception as e:
+        st.error(f"Request failed: {str(e)}")
             
     return None
 
@@ -95,63 +92,22 @@ st.markdown("""
         margin: 20px 0;
         border: 1px solid #e5e7eb;
         overflow: hidden;
+        background: #f3f4f6;
     }
     .banner-container img { width: 100%; height: auto; display: block; }
-    
     .rendered-content h1 { color: #111827 !important; font-weight: 800; border-bottom: 2px solid #3b82f6; padding-bottom: 10px; }
     .rendered-content h2 { color: #1f2937 !important; margin-top: 30px; font-weight: 700; }
     .rendered-content h3 { color: #374151 !important; margin-top: 25px; font-weight: 600; }
     .rendered-content p { line-height: 1.8; color: #374151 !important; margin-bottom: 20px; }
-    
-    .key-takeaways { 
-        background: #f0f7ff; 
-        border-left: 5px solid #007bff; 
-        padding: 20px; 
-        border-radius: 8px; 
-        margin: 20px 0; 
-        color: #1e293b !important; 
-    }
-    
+    .key-takeaways { background: #f0f7ff; border-left: 5px solid #007bff; padding: 20px; border-radius: 8px; margin: 20px 0; color: #1e293b !important; }
     .data-table-container { overflow-x: auto; margin: 25px 0; }
-    .data-table {
-        width: 100%;
-        border-collapse: collapse;
-        border-radius: 10px;
-        overflow: hidden;
-        box-shadow: 0 4px 10px rgba(0,0,0,0.05);
-    }
+    .data-table { width: 100%; border-collapse: collapse; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
     .data-table th { background-color: #3b82f6; color: white; padding: 15px; text-align: left; }
     .data-table td { padding: 12px 15px; border-bottom: 1px solid #e5e7eb; color: #1e293b !important; }
-
-    .visual-infographic {
-        background: #f8fafc;
-        border: 2px dashed #3b82f6;
-        padding: 25px;
-        border-radius: 15px;
-        margin: 30px 0;
-    }
-    .infographic-step {
-        display: flex;
-        align-items: center;
-        margin-bottom: 15px;
-        padding: 15px;
-        background: white;
-        border-radius: 10px;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-    }
+    .visual-infographic { background: #f8fafc; border: 2px dashed #3b82f6; padding: 25px; border-radius: 15px; margin: 30px 0; }
+    .infographic-step { display: flex; align-items: center; margin-bottom: 15px; padding: 15px; background: white; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
     .step-text { color: #1e293b !important; font-weight: 500; font-size: 1.1em; }
-    .step-number {
-        background: #3b82f6;
-        color: white !important;
-        min-width: 35px;
-        height: 35px;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        margin-right: 15px;
-        font-weight: 900;
-    }
+    .step-number { background: #3b82f6; color: white !important; min-width: 35px; height: 35px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 15px; font-weight: 900; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -173,11 +129,9 @@ with st.sidebar:
     target_audience = st.text_input("Target Audience", placeholder="e.g. Local customers")
     st.divider()
     sidebar_word_count = st.select_slider("Target Words (Global)", options=word_options, value=1000)
-    
     num_images = st.slider("Number of Images", 1, 3, 1)
     include_infographic = st.checkbox("Include Visual Infographic", value=True)
     include_table = st.checkbox("Include Summary/Stats Table", value=True)
-    
     st.divider()
     if st.button("🗑️ Reset Application", type="secondary"):
         st.session_state.research_data = None
@@ -253,47 +207,40 @@ if st.button("✨ GENERATE HUMANIZED ELITE ARTICLE"):
                 - {info_instr}
                 - Professional tone, actionable expert advice.
                 - END with a strong CTA mentioning {business_url}.
-                
-                STRICT FORMATTING:
-                - ABSOLUTELY NO Markdown hashtags (e.g., #, ##, ###). 
-                - Use only raw <h1>, <h2>, <h3> tags for all structure.
-                - No labels like "H1:", "H2:". 
-                - NO placeholders like [Image Here].
+                - ABSOLUTELY NO Markdown hashtags (e.g., #, ##). Use ONLY raw <h1>, <h2>, <h3> tags.
                 
                 Return JSON: {{'meta_title': '', 'meta_description': '', 'article_html': ''}}
                 """
                 
                 response = openai_client.chat.completions.create(
                     model="gpt-4o",
-                    messages=[{"role": "system", "content": "Master SEO Journalist. You only output pure HTML for the article body."}, {"role": "user", "content": user_p}],
+                    messages=[{"role": "system", "content": "Master SEO Journalist. You only output pure HTML."}, {"role": "user", "content": user_p}],
                     response_format={"type": "json_object"}
                 )
                 article_data = json.loads(response.choices[0].message.content)
 
-            # Phase 2: Targeted Image Generation with Visual Progress
             img_data_urls = []
             if num_images > 0:
-                img_status = st.status(f"📸 Generating {num_images} photorealistic banners using Google Imagen 4.0...", expanded=True)
+                img_status = st.status(f"📸 Requesting {num_images} banners from Google Imagen 4.0...", expanded=True)
                 for i in range(num_images):
                     img_status.write(f"Generating image {i+1} of {num_images}...")
-                    v_prompt = f"Authentic professional photography for {final_h1} in {industry} field. 35mm DSLR, natural light, realistic textures, professional environment. No text."
+                    v_prompt = f"Authentic professional photography for {final_h1} in {industry} field. Shot on 35mm DSLR, natural light, real textures, professional high-end environment. Sharp focus, no text, no illustration."
                     data_url = generate_google_image(v_prompt)
                     if data_url:
                         img_data_urls.append(data_url)
                     else:
-                        img_status.write(f"⚠️ Image {i+1} failed to generate. Retrying or skipping...")
-                img_status.update(label="✅ All images processed!", state="complete", expanded=False)
+                        img_status.write(f"⚠️ Image {i+1} failed. Check Google API Key and quotas.")
+                img_status.update(label="✅ Image processing complete!", state="complete", expanded=False)
             
-            # Embed images if they exist
             if img_data_urls:
-                embedded_images_html = "<hr><h2>Visual Assets</h2>"
+                embedded_images_html = "<hr><h2>Professional Visuals</h2>"
                 for url in img_data_urls:
                     embedded_images_html += f'<div class="banner-container"><img src="{url}"></div>'
                 article_data["article_html"] += embedded_images_html
             
             article_data["image_urls"] = img_data_urls
             st.session_state.generated_data = article_data
-            st.success("Elite Article Generated with Embedded Banners!")
+            st.success("Elite Article and Imagery Ready!")
             
         except Exception as e: st.error(f"Error during generation: {e}")
 
@@ -324,15 +271,15 @@ if st.session_state.generated_data:
     with c2: copy_to_clipboard(data.get("article_html", ""), "👤 Copy Formatted Text", "rich", False)
     
     st.download_button(
-        label="📥 Download Article (HTML with Images)", 
+        label="📥 Download Article (Full HTML Package)", 
         data=data.get("article_html", ""), 
-        file_name="complete_article.html", 
+        file_name="elite_seo_article.html", 
         mime="text/html", 
         use_container_width=True
     )
     
     if "image_urls" in data and len(data["image_urls"]) > 0:
-        st.write("**Download Individual Banners:**")
+        st.write("**Download Original Banners:**")
         cols = st.columns(len(data["image_urls"]))
         for idx, url in enumerate(data["image_urls"]):
             with cols[idx]:
@@ -341,7 +288,7 @@ if st.session_state.generated_data:
                     st.download_button(
                         label=f"Banner {idx+1} (PNG)", 
                         data=img_bytes, 
-                        file_name=f"banner_{idx+1}.png", 
+                        file_name=f"google_imagen_{idx+1}.png", 
                         mime="image/png", 
                         key=f"dl_single_{idx}"
                     )
@@ -349,7 +296,7 @@ if st.session_state.generated_data:
                     st.error(f"Error loading Image {idx+1}")
     
     actual_words = len(strip_html(data.get("article_html", "")).split())
-    st.info(f"Audit: {actual_words} words | Grade: Elite SEO Content")
+    st.info(f"Audit: {actual_words} words | Grade: Elite Content")
     st.markdown("</div>", unsafe_allow_html=True)
 
 st.markdown("<p style='text-align: center; color: #9ca3af; font-size: 11px; margin-top: 60px;'>Elite SEO & GEO Engine | Google Imagen 4.0 | © 2026</p>", unsafe_allow_html=True)

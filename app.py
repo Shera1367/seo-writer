@@ -130,6 +130,21 @@ st.markdown("""
     .rendered-content h1 { color: #111827; font-weight: 800; }
     .rendered-content h2 { color: #1f2937; margin-top: 1.5em; border-bottom: 1px solid #f3f4f6; padding-bottom: 0.3em; }
     
+    /* New style for the cinematic banner */
+    .banner-container {
+        width: 100%;
+        height: 350px;
+        overflow: hidden;
+        border-radius: 12px;
+        margin-bottom: 20px;
+        border: 1px solid #e5e7eb;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    }
+    .banner-container img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -244,8 +259,7 @@ with tab_generator:
     gen_col1, gen_col2 = st.columns(2)
     with gen_col1:
         search_intent = st.selectbox("Search Intent", ["Informational", "Transactional", "Commercial Investigation", "Navigational"])
-        tone = st.selectbox("Tone of Voice", ["Professional", "Authoritative", "Conversational", "Technical"])
-    with gen_col2:
+    gen_col2:
         word_count_goal = st.select_slider("Target Word Count", [500, 1000, 1500, 2000, 2500], value=1000)
 
     if st.button("✨ GENERATE HUMANIZED ELITE ARTICLE"):
@@ -254,38 +268,34 @@ with tab_generator:
         else:
             try:
                 client = OpenAI(api_key=API_KEY)
+                
                 sys_p = f"You are an Elite Investigative Journalist and Copywriter. Industry: {industry}. Language: {language}."
                 
                 user_p = f"""
                 Write an ULTIMATE, human-grade deep-dive article for {business_name}.
-                Structure: H1 -> H2 -> H3 -> H4 hierarchy.
-                
-                HUMANIZATION & HELPUL CONTENT RULES:
-                1. NO AI clichés (delve, unleash, testament, moreover).
-                2. BURSTINESS: Vary sentence lengths significantly (Short vs Long).
-                3. PERSPECTIVE: Use first-person expert perspective from {business_name}.
-                4. CITATIONS: Include 2 external links to .gov or .edu sources (relevant to {industry}).
-                5. QUOTES: Include 1 famous authority quote in <blockquote>.
-                6. FORMATTING: Use <strong> for SEO and <u> for key terms. NO em-dashes (—).
-                7. FAQ: 3 Real-talk, non-generic FAQs at the end.
-                8. DEPTH: Explain "WHY" and "HOW" in every section.
-                
-                DATA:
-                Title: {article_title} | Primary: {primary_k} | Keywords: {secondary_k} | LSI: {lsi_k}
-                Outline: {headings_k} | Intent: {search_intent} | Words: {word_count_goal}
-                GEO Context: {extra_k}
-                
-                Return JSON: {{"meta_title": "", "meta_description": "", "article_html": ""}}
-                """
-                with st.spinner("⏳ Synthesizing deep-dive content... This takes 60-90 seconds for high quality."):
+                with st.spinner("⏳ Synthesizing deep-dive content and generating realistic banner..."):
+                    # Generate Text
                     response = client.chat.completions.create(
                         model="gpt-4o",
                         messages=[{"role": "system", "content": sys_p}, {"role": "user", "content": user_p}],
                         response_format={"type": "json_object"},
                         temperature=0.85
                     )
-                    st.session_state.generated_data = json.loads(response.choices[0].message.content)
-                    st.success("Elite Article Generated!")
+                    generated_json = json.loads(response.choices[0].message.content)
+                    
+                    # Generate Image with DALL-E 3
+                    image_prompt = f"A highly realistic, professional, and cinematic wide-angle photograph related to '{article_title}' for the {industry} industry. High resolution, 8k, natural lighting, clean composition, no text or words in the image."
+                    img_response = client.images.generate(
+                        model="dall-e-3",
+                        prompt=image_prompt,
+                        size="1792x1024",
+                        quality="hd",
+                        n=1,
+                    )
+                    generated_json["image_url"] = img_response.data[0].url
+                    
+                    st.session_state.generated_data = generated_json
+                    st.success("Elite Article and Visual Assets Generated!")
             except Exception as e:
                 st.error(f"Generation Error: {e}")
 
@@ -295,6 +305,14 @@ if st.session_state.generated_data:
     
     st.markdown("<div class='section-header'>📋 Final Deliverables</div>", unsafe_allow_html=True)
     
+    if "image_url" in data:
+        st.markdown(f"""
+        <div class="banner-container">
+            <img src="{data['image_url']}" alt="Article Banner">
+        </div>
+        """, unsafe_allow_html=True)
+        st.caption(f"🚀 Realistic Banner Generated for {industry} (1920x630 aspect crop applied)")
+
     # Grid for Meta Tags
     st.markdown("<div class='deliverable-card'>", unsafe_allow_html=True)
     m1, m2 = st.columns(2)

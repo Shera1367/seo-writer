@@ -162,9 +162,16 @@ with st.sidebar:
     language = st.selectbox("Language", ["English", "Persian", "Spanish", "French", "German"])
     industry = st.selectbox("Industry", ["Legal", "Medical", "Travel", "Real Estate", "Technology", "Finance", "E-commerce"])
     business_name = st.text_input("Business Name", placeholder="e.g. Deldar Legal")
+    business_url = st.text_input("Business Website URL", placeholder="e.g. https://deldarlegal.com")
     target_audience = st.text_input("Target Audience", placeholder="e.g. Accident victims in CA")
     st.divider()
     sidebar_word_count = st.select_slider("Target Words (Global)", options=word_options, value=1000)
+    
+    # User-requested sidebar location for visuals
+    num_images = st.slider("Number of Images", 1, 3, 1)
+    include_infographic = st.checkbox("Include Educational Infographic", value=True)
+    
+    st.divider()
     if st.button("🗑️ Reset Application", type="secondary"):
         st.session_state.research_data = None
         st.session_state.generated_data = None
@@ -184,7 +191,7 @@ if st.button("🔍 START RESEARCH & ANALYSIS"):
         try:
             client = OpenAI(api_key=API_KEY)
             res_prompt = f"""
-            Industry: {industry}. Brand: {business_name}. Topic: '{seed_topic}'. 
+            Industry: {industry}. Brand: {business_name}. Website: {business_url}. Topic: '{seed_topic}'. 
             Competitors: {competitor_links}.
             Action: Generate 3 High-CTR Magnetic Headlines (Front-load keyword, use numbers, power words, and [2026 Guide]).
             Provide 1 Primary Keyword, 5 Secondary, 10 LSI, and a deep H2-H4 outline.
@@ -222,10 +229,6 @@ with col_r:
 col_opt1, col_opt2 = st.columns(2)
 with col_opt1:
     search_intent = st.selectbox("Search Intent", ["Informational", "Transactional", "Commercial"])
-    st.info(f"💡 Target Words: **{sidebar_word_count}**")
-with col_opt2:
-    num_images = st.slider("Number of Images needed", 1, 3, 1)
-    include_infographic = st.checkbox("Include Educational Infographic/Checklist", value=True)
 
 if st.button("✨ GENERATE HUMANIZED ELITE ARTICLE"):
     if not final_h1 or not primary_k:
@@ -240,6 +243,7 @@ if st.button("✨ GENERATE HUMANIZED ELITE ARTICLE"):
                 Task: Write a master-level article for {business_name} in {language}.
                 Word count: {sidebar_word_count}. Intent: {search_intent}. 
                 H1 Title: {final_h1}. Structure: {headings_k}.
+                Website: {business_url}.
                 
                 STRICT CLEANING RULES:
                 - DO NOT include "H1:", "H2:", or "H3:" text labels.
@@ -250,7 +254,8 @@ if st.button("✨ GENERATE HUMANIZED ELITE ARTICLE"):
                 2. {'MANDATORY: Include a section wrapped in <div class="visual-infographic"><h3>Quick Guide</h3>...</div> with steps wrapped in <div class="infographic-step"><div class="step-number">#</div>Text</div>' if include_infographic else ""}
                 3. Scannability: Max 3 sentences per paragraph.
                 4. Links: Include 2 relevant .gov/.edu sources.
-                5. Humanize: Use professional first-person expert tone. Vary sentence length.
+                5. CTA: Include a powerful CTA for {business_name} at the end, integrating {business_url}.
+                6. Humanize: Use professional first-person tone. Vary sentence length.
                 
                 META RULES: 
                 - 'meta_title': 50-60 chars, front-load "{primary_k}", use [2026].
@@ -260,14 +265,14 @@ if st.button("✨ GENERATE HUMANIZED ELITE ARTICLE"):
                 
                 response = client.chat.completions.create(
                     model="gpt-4o",
-                    messages=[{"role": "system", "content": f"Expert in {industry} writing. Strictly follow HTML visual rules."}, {"role": "user", "content": user_p}],
+                    messages=[{"role": "system", "content": f"Expert in {industry} writing. Follow HTML visual rules."}, {"role": "user", "content": user_p}],
                     response_format={"type": "json_object"}
                 )
                 gen_data = json.loads(response.choices[0].message.content)
                 
                 img_urls = []
                 for i in range(num_images):
-                    v_prompt = f"AUTHENTIC REAL-WORLD PHOTOGRAPHY of {final_h1} in {industry} setting. Natural sunlight, high-end professional DSLR camera, authentic textures, sharp details, NO CGI, NO CARTOON. Realistic workplace environment, 8k resolution."
+                    v_prompt = f"AUTHENTIC REAL-WORLD PHOTOGRAPHY of {final_h1} in {industry} setting. Natural sunlight, high-end DSLR, authentic textures, NO CGI, NO CARTOON. Realistic workspace, 8k resolution."
                     img_res = client.images.generate(model="dall-e-3", prompt=v_prompt, size="1792x1024", quality="hd")
                     img_urls.append(img_res.data[0].url)
                 
@@ -300,7 +305,7 @@ if st.session_state.generated_data:
     st.markdown("</div>", unsafe_allow_html=True)
 
     if "image_urls" in data:
-        st.subheader(f"🖼️ Authentic Real-World Banners ({len(data['image_urls'])} total)")
+        st.subheader(f"🖼️ Authentic Banners ({len(data['image_urls'])} total)")
         for idx, url in enumerate(data["image_urls"]):
             st.markdown(f'<div class="banner-container"><img src="{url}"></div>', unsafe_allow_html=True)
             img_bytes = download_image_bytes(url)

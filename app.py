@@ -5,6 +5,7 @@ import json
 import streamlit.components.v1 as components
 import re
 import requests
+import base64
 from io import BytesIO
 
 st.set_page_config(
@@ -14,10 +15,13 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
+# Configuration for APIs
 try:
-    API_KEY = st.secrets["OPENAI_API_KEY"]
+    OPENAI_API_KEY = st.secrets["OPENAI_API_KEY"]
+    # The environment provides Google API key automatically via an empty string constant
+    GOOGLE_API_KEY = "" 
 except Exception:
-    st.error("❌ API Key not found! Please add 'OPENAI_API_KEY' to your Streamlit Secrets.")
+    st.error("❌ API Keys not properly configured in Streamlit Secrets.")
     st.stop()
 
 def strip_html(html_string):
@@ -25,13 +29,31 @@ def strip_html(html_string):
     clean = re.compile('<.*?>')
     return re.sub(clean, '', html_string)
 
-def download_image_bytes(url):
-    """Fetch image bytes for download buttons."""
-    try:
-        response = requests.get(url)
-        return response.content
-    except:
-        return None
+def generate_google_image(prompt):
+    """Generates an image using Google's Imagen 4.0 model with exponential backoff."""
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict?key={GOOGLE_API_KEY}"
+    payload = {
+        "instances": [{"prompt": prompt}],
+        "parameters": {"sampleCount": 1}
+    }
+    
+    retries = 5
+    for i in range(retries):
+        try:
+            response = requests.post(url, json=payload, timeout=60)
+            if response.status_code == 200:
+                result = response.json()
+                # Extract base64 image data
+                img_data = result['predictions'][0]['bytesBase64Encoded']
+                return f"data:image/png;base64,{img_data}"
+            elif response.status_code in [429, 500, 503]:
+                time.sleep(2**i) # Exponential backoff: 1s, 2s, 4s, 8s, 16s
+            else:
+                break
+        except Exception:
+            time.sleep(2**i)
+            
+    return None
 
 def copy_to_clipboard(content, button_label="Copy", key_suffix="", is_html=False):
     """JavaScript for Rich Text and HTML copying."""
@@ -73,6 +95,10 @@ st.markdown("""
         border-radius: 12px;
         margin-bottom: 10px;
         border: 1px solid #e5e7eb;
+        background-color: #f3f4f6;
+        display: flex;
+        align-items: center;
+        justify-content: center;
     }
     .banner-container img { width: 100%; height: 100%; object-fit: cover; }
     .rendered-content h1 { color: #111827; font-weight: 800; border-bottom: 2px solid #3b82f6; padding-bottom: 10px; }
@@ -184,7 +210,7 @@ if st.button("🔍 START RESEARCH & ANALYSIS"):
         st.warning("Please enter Seed Topic and Business Name.")
     else:
         try:
-            client = OpenAI(api_key=API_KEY)
+            client = OpenAI(api_key=OPENAI_API_KEY)
             res_prompt = f"Analyze topic '{seed_topic}' for {business_name} ({industry}) and these competitors: {competitor_links}. Generate 3 Headlines (front-load keyword, numbers, brackets [2026]), 1 Primary, 5 Secondary, 10 LSI, and an outline. Return JSON: {{'headlines': [], 'primary': '', 'secondary': [], 'lsi': [], 'structure_text': ''}}"
             with st.spinner("⏳ Analyzing search landscape..."):
                 response = client.chat.completions.create(
@@ -222,7 +248,7 @@ if st.button("✨ GENERATE HUMANIZED ELITE ARTICLE"):
         st.warning("H1 and Primary Keyword are required.")
     else:
         try:
-            client = OpenAI(api_key=API_KEY)
+            openai_client = OpenAI(api_key=OPENAI_API_KEY)
             with st.spinner(f"⏳ Synthesizing elite deep-dive content..."):
                 
                 table_instr = "MANDATORY: Include a detailed comparison table using: <div class='data-table-container'><table class='data-table'>...</table></div>." if include_table else ""
@@ -241,19 +267,18 @@ if st.button("✨ GENERATE HUMANIZED ELITE ARTICLE"):
 
                 user_p = f"""
                 Write a MASTER-LEVEL, high-authority SEO article for {business_name} in {language}. 
-                Target Words: {sidebar_word_count} (MANDATORY: You must hit this word count).
+                Target Words: {sidebar_word_count}.
                 Intent: {search_intent}. 
                 H1 Title: {final_h1}. 
-                Structure provided: {headings_k}. 
+                Structure: {headings_k}. 
                 Website: {business_url}.
                 
                 CRITICAL DEPTH & AUTHORITY RULES:
-                - EVERY H2, H3, and H4 heading MUST be followed by at least 150-200 words of substantial, informative text.
-                - MANDATORY: Include exactly 2 outbound links to highly authoritative sources (e.g., .gov or .edu websites) relevant to the topic. These MUST NOT be commercial competitors.
-                - DO NOT write one-sentence explanations. 
+                - EVERY H2, H3, and H4 heading MUST be followed by at least 150-200 words of informative text.
+                - MANDATORY: Include exactly 2 outbound links to highly authoritative sources (.gov or .edu) relevant to the topic.
                 - Deep-dive into the "Why" and "How". Provide actionable advice and expert insights.
-                - Paragraphs should be concise (2-4 sentences) but MUST be numerous to build total depth.
-                - Use a humanized, authoritative first-person perspective (as an expert from {business_name}).
+                - Paragraphs should be concise (2-4 sentences).
+                - Use an authoritative first-person perspective as an expert.
                 
                 STRICT FORMATTING:
                 - No labels like "H1:", "H2:". Use raw <h1>, <h2> tags.
@@ -268,22 +293,25 @@ if st.button("✨ GENERATE HUMANIZED ELITE ARTICLE"):
                 Return ONLY JSON: {{'meta_title': '', 'meta_description': '', 'article_html': ''}}
                 """
                 
-                response = client.chat.completions.create(
+                response = openai_client.chat.completions.create(
                     model="gpt-4o",
-                    messages=[{"role": "system", "content": "SEO Master Writer. Expert in clean HTML and CSS-based visual layouts."}, {"role": "user", "content": user_p}],
+                    messages=[{"role": "system", "content": "SEO Master Writer."}, {"role": "user", "content": user_p}],
                     response_format={"type": "json_object"}
                 )
-                gen_data = json.loads(response.choices[0].message.content)
+                gen_data = response.choices[0].message.content
+                article_data = json.loads(gen_data)
                 
-                img_urls = []
+                # Image generation using Google's Imagen 4.0 (Nano Banana 1)
+                img_data_urls = []
                 for i in range(num_images):
-                    v_prompt = f"Authentic, high-end professional lifestyle photography of {final_h1} in a {industry} context. Natural lighting, real textures, sharp focus, real environment. NO text, NO cartoon, NO plastic skin."
-                    img_res = client.images.generate(model="dall-e-3", prompt=v_prompt, size="1792x1024", quality="hd", style="natural")
-                    img_urls.append(img_res.data[0].url)
+                    v_prompt = f"Professional, ultra-realistic high-end photography for {final_h1} in {industry} field. Shot on 35mm DSLR, natural lighting, sharp focus on realistic textures, professional setting. No text, no cartoonish elements, authentic human environment."
+                    data_url = generate_google_image(v_prompt)
+                    if data_url:
+                        img_data_urls.append(data_url)
                 
-                gen_data["image_urls"] = img_urls
-                st.session_state.generated_data = gen_data
-                st.success("Elite Article Generated!")
+                article_data["image_urls"] = img_data_urls
+                st.session_state.generated_data = article_data
+                st.success("Elite Article Generated with Google Imagen 4.0 Banners!")
         except Exception as e: st.error(f"Error: {e}")
 
 if st.session_state.generated_data:
@@ -309,12 +337,17 @@ if st.session_state.generated_data:
     st.markdown("</div>", unsafe_allow_html=True)
 
     if "image_urls" in data:
-        st.subheader(f"🖼️ Authentic Banners ({len(data['image_urls'])} total)")
+        st.subheader(f"🖼️ Google Imagen 4.0 Banners ({len(data['image_urls'])} total)")
         for idx, url in enumerate(data["image_urls"]):
             st.markdown(f'<div class="banner-container"><img src="{url}"></div>', unsafe_allow_html=True)
-            img_bytes = download_image_bytes(url)
-            if img_bytes:
-                st.download_button(label=f"📥 Download Banner {idx+1}", data=img_bytes, file_name=f"banner_{idx+1}.jpg", mime="image/jpeg", key=f"dl_i_{idx}")
+            # Since these are data URLs, we can download directly
+            st.download_button(
+                label=f"📥 Download Banner {idx+1}", 
+                data=url.split(",")[1], 
+                file_name=f"banner_{idx+1}.png", 
+                mime="image/png", 
+                key=f"dl_i_{idx}"
+            )
 
     st.markdown("<div class='deliverable-card'>", unsafe_allow_html=True)
     st.subheader("🛠️ Final Tools & Export")
@@ -324,7 +357,7 @@ if st.session_state.generated_data:
     st.download_button(label="📥 Download Article (HTML File)", data=data.get("article_html", ""), file_name="seo_article.html", mime="text/html", use_container_width=True)
     
     actual_words = len(strip_html(data.get("article_html", "")).split())
-    st.markdown(f"<div style='background: #1e293b; color: white; padding: 16px; border-radius: 10px; border-left: 5px solid #3b82f6;'><strong>Audit:</strong> {actual_words} words | <strong>Grade:</strong> Elite SEO Content</div>", unsafe_allow_html=True)
+    st.markdown(f"<div style='background: #1e293b; color: white; padding: 16px; border-radius: 10px; border-left: 5px solid #3b82f6;'><strong>Audit:</strong> {actual_words} words | <strong>Grade:</strong> Elite SEO Content (Google Enhanced)</div>", unsafe_allow_html=True)
     st.markdown("</div>", unsafe_allow_html=True)
 
-st.markdown("<p style='text-align: center; color: #9ca3af; font-size: 11px; margin-top: 60px;'>Elite SEO & GEO Engine | Powered by OpenAI | © 2026</p>", unsafe_allow_html=True)
+st.markdown("<p style='text-align: center; color: #9ca3af; font-size: 11px; margin-top: 60px;'>Elite SEO & GEO Engine | Powered by Google Imagen 4.0 | © 2026</p>", unsafe_allow_html=True)

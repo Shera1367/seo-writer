@@ -28,7 +28,7 @@ def strip_html(html_string):
 def download_image_bytes(url):
     """Fetch image bytes from URL for download button."""
     try:
-        response = requests.get(url)
+        response = requests.get(url, timeout=10)
         return response.content
     except:
         return None
@@ -306,8 +306,20 @@ if st.button("✨ GENERATE HUMANIZED ELITE ARTICLE"):
                 
                 img_urls = []
                 for i in range(num_images):
-                    v_prompt = f"PHOTOREALISTIC high-end photography of {final_h1} in {industry} context. Natural light, real environment, 8k DSLR, no text."
-                    img_res = client.images.generate(model="dall-e-3", prompt=v_prompt, size="1792x1024", quality="hd")
+                    # Optimized prompt for maximum realism and zero "AI-look"
+                    v_prompt = f"""
+                    Authentic, high-end professional lifestyle photography of {final_h1} in a {industry} context. 
+                    Shot on 35mm lens, natural ambient daylight, soft shadows, real human skin textures, 
+                    professional environment, candid moment. Minimalist composition, sharp focus, 
+                    documentary style. NO text, NO 3D render, NO plastic skin, NO digital illustration.
+                    """
+                    img_res = client.images.generate(
+                        model="dall-e-3", 
+                        prompt=v_prompt.strip(), 
+                        size="1792x1024", 
+                        quality="hd", 
+                        style="vivid" if industry == "Travel" else "natural" # "natural" is key for Legal/Medical
+                    )
                     img_urls.append(img_res.data[0].url)
                 
                 gen_data["image_urls"] = img_urls

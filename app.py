@@ -43,11 +43,10 @@ def generate_google_image(prompt):
             response = requests.post(url, json=payload, timeout=60)
             if response.status_code == 200:
                 result = response.json()
-                # Extract base64 image data
                 img_data = result['predictions'][0]['bytesBase64Encoded']
                 return f"data:image/png;base64,{img_data}"
             elif response.status_code in [429, 500, 503]:
-                time.sleep(2**i) # Exponential backoff: 1s, 2s, 4s, 8s, 16s
+                time.sleep(2**i) 
             else:
                 break
         except Exception:
@@ -90,20 +89,18 @@ st.markdown("""
     }
     .banner-container {
         width: 100%;
-        height: 400px;
-        overflow: hidden;
+        max-width: 100%;
+        height: auto;
         border-radius: 12px;
-        margin-bottom: 10px;
+        margin: 20px 0;
         border: 1px solid #e5e7eb;
-        background-color: #f3f4f6;
-        display: flex;
-        align-items: center;
-        justify-content: center;
+        overflow: hidden;
     }
-    .banner-container img { width: 100%; height: 100%; object-fit: cover; }
-    .rendered-content h1 { color: #111827; font-weight: 800; border-bottom: 2px solid #3b82f6; padding-bottom: 10px; }
-    .rendered-content h2 { color: #1f2937; margin-top: 30px; font-weight: 700; }
-    .rendered-content p { line-height: 1.8; color: #374151; margin-bottom: 20px; }
+    .banner-container img { width: 100%; height: auto; display: block; }
+    
+    .rendered-content h1 { color: #111827 !important; font-weight: 800; border-bottom: 2px solid #3b82f6; padding-bottom: 10px; }
+    .rendered-content h2 { color: #1f2937 !important; margin-top: 30px; font-weight: 700; }
+    .rendered-content p { line-height: 1.8; color: #374151 !important; margin-bottom: 20px; }
     
     .key-takeaways { 
         background: #f0f7ff; 
@@ -121,21 +118,9 @@ st.markdown("""
         border-radius: 10px;
         overflow: hidden;
         box-shadow: 0 4px 10px rgba(0,0,0,0.05);
-        font-family: inherit;
-        font-size: 0.95em;
     }
-    .data-table th {
-        background-color: #3b82f6;
-        color: white;
-        padding: 15px;
-        text-align: left;
-    }
-    .data-table td {
-        padding: 12px 15px;
-        border-bottom: 1px solid #e5e7eb;
-        color: #1e293b;
-    }
-    .data-table tr:nth-child(even) { background-color: #f8fafc; }
+    .data-table th { background-color: #3b82f6; color: white; padding: 15px; text-align: left; }
+    .data-table td { padding: 12px 15px; border-bottom: 1px solid #e5e7eb; color: #1e293b !important; }
 
     .visual-infographic {
         background: #f8fafc;
@@ -180,9 +165,9 @@ word_options = list(range(200, 2100, 100))
 
 with st.sidebar:
     st.header("⚙️ Global Strategy")
-    language = st.selectbox("Language", ["English", "Persian", "Spanish", "French", "German"])
+    language = st.selectbox("Language", ["Persian", "English", "Spanish", "French", "German"])
     industry = st.selectbox("Industry", ["Legal", "Medical", "Travel", "Real Estate", "Technology", "Finance", "E-commerce"])
-    business_name = st.text_input("Business Name", placeholder="e.g. My Agency")
+    business_name = st.text_input("Business Name", placeholder="e.g. Deldar Legal")
     business_url = st.text_input("Business Website URL", placeholder="e.g. https://yoursite.com")
     target_audience = st.text_input("Target Audience", placeholder="e.g. Local customers")
     st.divider()
@@ -249,69 +234,51 @@ if st.button("✨ GENERATE HUMANIZED ELITE ARTICLE"):
     else:
         try:
             openai_client = OpenAI(api_key=OPENAI_API_KEY)
-            with st.spinner(f"⏳ Synthesizing elite deep-dive content..."):
+            with st.spinner(f"⏳ Synthesizing master-level content and banners..."):
                 
-                table_instr = "MANDATORY: Include a detailed comparison table using: <div class='data-table-container'><table class='data-table'>...</table></div>." if include_table else ""
-                
-                info_instr = ""
-                if include_infographic:
-                    info_instr = """
-                    MANDATORY: Include a 'Visual Infographic' section. 
-                    DO NOT USE <img> TAGS. Use this EXACT HTML structure:
-                    <div class='visual-infographic'>
-                        <h3>Process Overview</h3>
-                        <div class='infographic-step'><div class='step-number'>1</div><div class='step-text'>Step Description</div></div>
-                        ...
-                    </div>
-                    """
+                table_instr = "MANDATORY: Include a comparison table wrapping it in <div class='data-table-container'><table class='data-table'>...</table></div>." if include_table else ""
+                info_instr = "MANDATORY: Include a 'Visual Infographic' section using ONLY CSS-styled boxes (no <img> tags) with class 'visual-infographic' and 'infographic-step'." if include_infographic else ""
 
                 user_p = f"""
-                Write a MASTER-LEVEL, high-authority SEO article for {business_name} in {language}. 
-                Target Words: {sidebar_word_count}.
-                Intent: {search_intent}. 
-                H1 Title: {final_h1}. 
-                Structure: {headings_k}. 
-                Website: {business_url}.
+                Write a deep-dive SEO article for {business_name} in {language}. Words: {sidebar_word_count}. Intent: {search_intent}. 
+                H1 Title: {final_h1}. Structure: {headings_k}. Website: {business_url}.
                 
-                CRITICAL DEPTH & AUTHORITY RULES:
-                - EVERY H2, H3, and H4 heading MUST be followed by at least 150-200 words of informative text.
-                - MANDATORY: Include exactly 2 outbound links to highly authoritative sources (.gov or .edu) relevant to the topic.
-                - Deep-dive into the "Why" and "How". Provide actionable advice and expert insights.
-                - Paragraphs should be concise (2-4 sentences).
-                - Use an authoritative first-person perspective as an expert.
-                
-                STRICT FORMATTING:
-                - No labels like "H1:", "H2:". Use raw <h1>, <h2> tags.
+                CRITICAL INSTRUCTIONS:
+                - EVERY heading MUST be followed by significant informative text (min 150 words per H2).
+                - Use exactly 2 outbound links to .gov or .edu sources.
+                - Start with <div class='key-takeaways'><strong>Key Highlights:</strong> [List]</div>.
                 - {table_instr}
                 - {info_instr}
-                - Start with <div class='key-takeaways'><strong>Key Highlights:</strong> [List]</div>.
-                - CTA at end with {business_url}.
+                - Professional tone, actionable expert advice.
+                - END with a strong CTA mentioning {business_url}.
+                - NO placeholders like [Image Here].
                 
-                META:
-                - 'meta_title': 50-60 chars, front-load "{primary_k}".
-                - 'meta_description': 150 chars max.
-                Return ONLY JSON: {{'meta_title': '', 'meta_description': '', 'article_html': ''}}
+                Return JSON: {{'meta_title': '', 'meta_description': '', 'article_html': ''}}
                 """
                 
                 response = openai_client.chat.completions.create(
                     model="gpt-4o",
-                    messages=[{"role": "system", "content": "SEO Master Writer."}, {"role": "user", "content": user_p}],
+                    messages=[{"role": "system", "content": "Master SEO Journalist."}, {"role": "user", "content": user_p}],
                     response_format={"type": "json_object"}
                 )
-                gen_data = response.choices[0].message.content
-                article_data = json.loads(gen_data)
+                article_data = json.loads(response.choices[0].message.content)
                 
-                # Image generation using Google's Imagen 4.0 (Nano Banana 1)
+                # Image generation and direct embedding
                 img_data_urls = []
+                embedded_images_html = "<hr><h2>Visual Assets</h2>"
                 for i in range(num_images):
-                    v_prompt = f"Professional, ultra-realistic high-end photography for {final_h1} in {industry} field. Shot on 35mm DSLR, natural lighting, sharp focus on realistic textures, professional setting. No text, no cartoonish elements, authentic human environment."
+                    v_prompt = f"Authentic professional photography for {final_h1}. 35mm DSLR, natural light, realistic textures, professional environment. No text."
                     data_url = generate_google_image(v_prompt)
                     if data_url:
                         img_data_urls.append(data_url)
+                        embedded_images_html += f'<div class="banner-container"><img src="{data_url}"></div>'
                 
+                # Append images to the main HTML so they are part of the preview and export
+                article_data["article_html"] += embedded_images_html
                 article_data["image_urls"] = img_data_urls
+                
                 st.session_state.generated_data = article_data
-                st.success("Elite Article Generated with Google Imagen 4.0 Banners!")
+                st.success("Article Generated with Embedded Google Imagen 4.0 Banners!")
         except Exception as e: st.error(f"Error: {e}")
 
 if st.session_state.generated_data:
@@ -319,45 +286,51 @@ if st.session_state.generated_data:
     st.divider()
     
     st.markdown("<div class='deliverable-card'>", unsafe_allow_html=True)
-    st.subheader("📋 SEO Meta Data")
+    st.subheader("📋 Meta Data")
     m1, m2 = st.columns(2)
     with m1:
-        st.write("**Meta Title**")
-        st.text_area("Title", value=data.get("meta_title", ""), height=100, label_visibility="collapsed", key="mt_disp")
+        st.text_area("Meta Title", value=data.get("meta_title", ""), height=80, key="mt_disp")
         copy_to_clipboard(data.get("meta_title", ""), "📋 Copy Title", "mt", True)
     with m2:
-        st.write("**Meta Description**")
-        st.text_area("Desc", value=data.get("meta_description", ""), height=100, label_visibility="collapsed", key="md_disp")
+        st.text_area("Meta Description", value=data.get("meta_description", ""), height=80, key="md_disp")
         copy_to_clipboard(data.get("meta_description", ""), "📋 Copy Desc", "md", True)
     st.markdown("</div>", unsafe_allow_html=True)
 
     st.markdown("<div class='deliverable-card'>", unsafe_allow_html=True)
-    st.subheader("📄 Interactive Content Preview")
+    st.subheader("📄 Article Content & Embedded Media")
     st.markdown(f"<div class='rendered-content'>{data.get('article_html', '')}</div>", unsafe_allow_html=True)
     st.markdown("</div>", unsafe_allow_html=True)
 
-    if "image_urls" in data:
-        st.subheader(f"🖼️ Google Imagen 4.0 Banners ({len(data['image_urls'])} total)")
-        for idx, url in enumerate(data["image_urls"]):
-            st.markdown(f'<div class="banner-container"><img src="{url}"></div>', unsafe_allow_html=True)
-            # Since these are data URLs, we can download directly
-            st.download_button(
-                label=f"📥 Download Banner {idx+1}", 
-                data=url.split(",")[1], 
-                file_name=f"banner_{idx+1}.png", 
-                mime="image/png", 
-                key=f"dl_i_{idx}"
-            )
-
     st.markdown("<div class='deliverable-card'>", unsafe_allow_html=True)
-    st.subheader("🛠️ Final Tools & Export")
+    st.subheader("🛠️ Export & Download")
     c1, c2 = st.columns(2)
-    with c1: copy_to_clipboard(data.get("article_html", ""), "💾 Copy HTML Code", "html", True)
+    with c1: copy_to_clipboard(data.get("article_html", ""), "💾 Copy HTML (Images Included)", "html", True)
     with c2: copy_to_clipboard(data.get("article_html", ""), "👤 Copy Formatted Text", "rich", False)
-    st.download_button(label="📥 Download Article (HTML File)", data=data.get("article_html", ""), file_name="seo_article.html", mime="text/html", use_container_width=True)
+    
+    st.download_button(
+        label="📥 Download Article (HTML with Images)", 
+        data=data.get("article_html", ""), 
+        file_name="complete_article.html", 
+        mime="text/html", 
+        use_container_width=True
+    )
+    
+    # Separate download buttons for individual PNGs
+    if "image_urls" in data:
+        st.write("**Download Individual Banners:**")
+        cols = st.columns(len(data["image_urls"]))
+        for idx, url in enumerate(data["image_urls"]):
+            with cols[idx]:
+                st.download_button(
+                    label=f"Banner {idx+1} (PNG)", 
+                    data=base64.b64decode(url.split(",")[1]), 
+                    file_name=f"banner_{idx+1}.png", 
+                    mime="image/png", 
+                    key=f"dl_single_{idx}"
+                )
     
     actual_words = len(strip_html(data.get("article_html", "")).split())
-    st.markdown(f"<div style='background: #1e293b; color: white; padding: 16px; border-radius: 10px; border-left: 5px solid #3b82f6;'><strong>Audit:</strong> {actual_words} words | <strong>Grade:</strong> Elite SEO Content (Google Enhanced)</div>", unsafe_allow_html=True)
+    st.info(f"Audit: {actual_words} words | Grade: Elite SEO Content")
     st.markdown("</div>", unsafe_allow_html=True)
 
-st.markdown("<p style='text-align: center; color: #9ca3af; font-size: 11px; margin-top: 60px;'>Elite SEO & GEO Engine | Powered by Google Imagen 4.0 | © 2026</p>", unsafe_allow_html=True)
+st.markdown("<p style='text-align: center; color: #9ca3af; font-size: 11px; margin-top: 60px;'>Elite SEO & GEO Engine | Google Imagen 4.0 | © 2026</p>", unsafe_allow_html=True)

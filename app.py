@@ -108,6 +108,9 @@ st.markdown("""
 st.title("🚀 Elite SEO & GEO Content Engine")
 st.markdown("<p style='color: #6b7280; margin-top: -15px;'>Professional Unified AI Writing Platform</p>", unsafe_allow_html=True)
 
+# Generate word count options: 200 to 2000 with step of 100
+word_options = list(range(200, 2100, 100))
+
 with st.sidebar:
     st.header("⚙️ Global Strategy")
     language = st.selectbox("Language", ["English", "Persian", "Spanish", "French", "German"])
@@ -116,6 +119,8 @@ with st.sidebar:
     target_audience = st.text_input("Target Audience", placeholder="e.g. Accident victims in CA")
     
     st.divider()
+    sidebar_word_count = st.select_slider("Default Target Words", options=word_options, value=1000)
+    
     if st.button("🗑️ Reset Application", type="secondary"):
         st.session_state.research_data = None
         st.session_state.generated_data = None
@@ -143,7 +148,6 @@ if st.button("🔍 START RESEARCH"):
                 )
                 raw_res = json.loads(response.choices[0].message.content)
                 
-                # Cleaning the data: Join lists into clean comma-separated strings
                 st.session_state.research_data = {
                     "headline": raw_res.get('headlines', [""])[0],
                     "primary": raw_res.get('primary', ""),
@@ -172,7 +176,7 @@ col_b1, col_b2 = st.columns(2)
 with col_b1:
     search_intent = st.selectbox("Search Intent", ["Informational", "Transactional", "Commercial"])
 with col_b2:
-    word_count_goal = st.select_slider("Target Words", [500, 1000, 1500, 2000], value=1000)
+    word_count_goal = st.select_slider("Target Words", options=word_options, value=sidebar_word_count)
 
 if st.button("✨ GENERATE HUMANIZED ELITE ARTICLE"):
     if not final_h1 or not primary_k:
@@ -180,14 +184,14 @@ if st.button("✨ GENERATE HUMANIZED ELITE ARTICLE"):
     else:
         try:
             client = OpenAI(api_key=API_KEY)
-            with st.spinner("⏳ Synthesizing deep-dive content and DALL-E 3 banner..."):
+            with st.spinner("⏳ Synthesizing deep-dive content and generating 2 high-end banners..."):
                 # 1. Text Generation
                 sys_p = f"You are an elite SEO/GEO Investigative Journalist for {industry}."
                 user_p = f"""
                 Write a 100% unique, human-grade deep-dive for {business_name} in {language}.
                 Title: {final_h1}. Target words: {word_count_goal}. Intent: {search_intent}.
                 Structure: {headings_k}. 
-                Strict Rules: No em-dashes. Vary sentence lengths. No clichés. 
+                Strict Rules: No em-dashes. Vary sentence lengths (burstiness). No AI clichés. 
                 Include 2 .gov/.edu links. Include 3 FAQs. Use <strong> and <u> tags.
                 Return JSON: {{'meta_title': '', 'meta_description': '', 'article_html': ''}}
                 """
@@ -199,11 +203,14 @@ if st.button("✨ GENERATE HUMANIZED ELITE ARTICLE"):
                 )
                 gen_data = json.loads(response.choices[0].message.content)
                 
-                # 2. Image Generation
-                img_prompt = f"Professional realistic cinematic photography for '{final_h1}' in {industry} field, studio lighting, wide angle, 8k, no text."
-                img_res = client.images.generate(model="dall-e-3", prompt=img_prompt, size="1792x1024", quality="hd")
-                gen_data["image_url"] = img_res.data[0].url
+                # 2. Dual Image Generation
+                img_urls = []
+                for i in range(2):
+                    v_prompt = f"Professional realistic cinematic photography for '{final_h1}' in {industry}, variant {i+1}, studio lighting, wide angle, 8k, photorealistic, no text."
+                    img_res = client.images.generate(model="dall-e-3", prompt=v_prompt, size="1792x1024", quality="hd")
+                    img_urls.append(img_res.data[0].url)
                 
+                gen_data["image_urls"] = img_urls
                 st.session_state.generated_data = gen_data
                 st.success("Elite Deliverables Generated!")
         except Exception as e:
@@ -212,9 +219,8 @@ if st.button("✨ GENERATE HUMANIZED ELITE ARTICLE"):
 if st.session_state.generated_data:
     data = st.session_state.generated_data
     st.divider()
-    if "image_url" in data:
-        st.markdown(f'<div class="banner-container"><img src="{data["image_url"]}"></div>', unsafe_allow_html=True)
 
+    # Layout Change: Meta Info Card at the Top
     st.markdown("<div class='deliverable-card'>", unsafe_allow_html=True)
     st.subheader("📋 Meta Information")
     m1, m2 = st.columns(2)
@@ -228,18 +234,49 @@ if st.session_state.generated_data:
         copy_to_clipboard(data.get("meta_description", ""), "📋 Copy Desc", "md", True)
     st.markdown("</div>", unsafe_allow_html=True)
 
+    # Layout Change: Content Preview stays central
     st.markdown("<div class='deliverable-card'>", unsafe_allow_html=True)
-    st.subheader("📄 Content Body")
-    c1, c2, _ = st.columns([1, 1, 2])
+    st.subheader("📄 Content Preview")
+    st.markdown(f"<div class='rendered-content'>{data.get('article_html', '')}</div>", unsafe_allow_html=True)
+    st.markdown("</div>", unsafe_allow_html=True)
+
+    # Layout Change: Images moved to the bottom
+    if "image_urls" in data:
+        st.subheader("🖼️ Article Banners (1920x630)")
+        for idx, url in enumerate(data["image_urls"]):
+            st.markdown(f'<div class="banner-container"><img src="{url}"></div>', unsafe_allow_html=True)
+
+    # Layout Change: Download and Code tools at the very bottom
+    st.markdown("<div class='deliverable-card'>", unsafe_allow_html=True)
+    st.subheader("🛠️ Final Tools & Export")
+    
+    # Copy Buttons
+    c1, c2 = st.columns(2)
     with c1: copy_to_clipboard(data.get("article_html", ""), "💾 Copy HTML Code", "html", True)
     with c2: copy_to_clipboard(data.get("article_html", ""), "👤 Copy Formatted Text", "rich", False)
     
-    t1, t2 = st.tabs(["👁️ Preview", "💻 HTML Source"])
-    with t1: st.markdown(f"<div class='rendered-content'>{data.get('article_html', '')}</div>", unsafe_allow_html=True)
-    with t2: st.text_area("Code", value=data.get("article_html", ""), height=400, label_visibility="collapsed", key="html_src")
+    # Raw Code Expander
+    with st.expander("💻 View Raw HTML Source"):
+        st.text_area("Code", value=data.get("article_html", ""), height=300, label_visibility="collapsed", key="html_src")
     
+    # Download Button
+    st.download_button(
+        label="📥 Download Article (HTML File)",
+        data=data.get("article_html", ""),
+        file_name=f"{final_h1.lower().replace(' ', '_')}.html",
+        mime="text/html",
+        use_container_width=True
+    )
+
+    # Audit Info
     actual_words = len(strip_html(data.get("article_html", "")).split())
-    st.markdown(f"<div style='background:#f3f4f6;padding:12px;border-radius:8px;margin-top:15px;'>Audit: {actual_words} words | Brand: {business_name} | Grade: Elite</div>", unsafe_allow_html=True)
+    st.markdown(f"""
+        <div style='background: #1e293b; color: #ffffff; padding: 16px; border-radius: 10px; margin-top: 20px; border-left: 5px solid #3b82f6; font-family: sans-serif;'>
+            <strong style='color: #60a5fa;'>Final Audit:</strong> {actual_words} words | 
+            <strong style='color: #60a5fa;'>Brand:</strong> {business_name} | 
+            <strong style='color: #60a5fa;'>Grade:</strong> Elite Humanized Content
+        </div>
+    """, unsafe_allow_html=True)
     st.markdown("</div>", unsafe_allow_html=True)
 
 st.markdown("<p style='text-align: center; color: #9ca3af; font-size: 11px; margin-top: 60px;'>Elite SEO & GEO Engine | Powered by OpenAI | © 2026</p>", unsafe_allow_html=True)

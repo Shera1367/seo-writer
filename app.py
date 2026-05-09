@@ -31,11 +31,11 @@ def generate_google_image(prompt, is_infographic=False):
     """Google Imagen 4.0 generator for 16:9 banners and visual infographics."""
     url = f"https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict?key={GOOGLE_API_KEY}"
     
-    # Context-aware prompting
     if is_infographic:
-        final_prompt = f"Professional clean educational infographic for '{prompt}'. Instructional diagram, step-by-step visual, minimal text, flat vector design style, high contrast, 16:9 ratio, presentation slide quality."
+        # User requested "real" theme for infographics
+        final_prompt = f"High-end professional realistic educational visual for '{prompt}'. Realistic 35mm photography of professional tools or environment mixed with clean minimal instructional layout, real-world textures, natural lighting, high contrast, 16:9 ratio, professional slide quality."
     else:
-        final_prompt = f"{prompt}. Cinematic widescreen 16:9 composition, professional 35mm photography, single unified frame, natural lighting, high-end commercial quality."
+        final_prompt = f"{prompt}. Cinematic widescreen 16:9 composition, professional 35mm photography, single unified frame, natural lighting, high-end commercial quality, no text."
     
     payload = {
         "instances": [{"prompt": final_prompt}],
@@ -83,14 +83,14 @@ def copy_to_clipboard(content, button_label="Copy", key_suffix="", is_html=False
 
 st.markdown("""
 <style>
-    .main { background-color: #f9fafb; }
+    .main { background-color: #0f172a; }
     .deliverable-card {
-        background-color: #ffffff;
+        background-color: #1e293b;
         padding: 24px;
         border-radius: 12px;
-        border: 1px solid #e5e7eb;
+        border: 1px solid #334155;
         margin-bottom: 20px;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
     }
     .banner-container {
         width: 100%;
@@ -98,20 +98,27 @@ st.markdown("""
         aspect-ratio: 16 / 9;
         border-radius: 12px;
         margin: 25px 0;
-        border: 1px solid #e5e7eb;
+        border: 1px solid #334155;
         overflow: hidden;
-        background: #f3f4f6;
+        background: #1e293b;
     }
     .banner-container img { width: 100%; height: 100%; object-fit: cover; display: block; }
-    .rendered-content h1 { color: #111827 !important; font-weight: 800; border-bottom: 2px solid #3b82f6; padding-bottom: 10px; }
-    .rendered-content h2 { color: #1f2937 !important; margin-top: 35px; font-weight: 700; border-left: 5px solid #3b82f6; padding-left: 15px; }
-    .rendered-content h3 { color: #374151 !important; margin-top: 25px; font-weight: 600; }
-    .rendered-content p { line-height: 1.9; color: #374151 !important; margin-bottom: 20px; font-size: 1.05em; }
-    .key-takeaways { background: #f0f7ff; border-left: 5px solid #007bff; padding: 20px; border-radius: 8px; margin: 20px 0; color: #1e293b !important; }
-    .data-table-container { overflow-x: auto; margin: 25px 0; }
-    .data-table { width: 100%; border-collapse: collapse; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
+    
+    /* FIXING VISIBILITY FOR RENDERED CONTENT */
+    .rendered-content h1 { color: #f8fafc !important; font-weight: 800; border-bottom: 2px solid #3b82f6; padding-bottom: 10px; margin-bottom: 20px; }
+    .rendered-content h2 { color: #f1f5f9 !important; margin-top: 40px; font-weight: 700; border-left: 5px solid #3b82f6; padding-left: 15px; margin-bottom: 15px; }
+    .rendered-content h3 { color: #e2e8f0 !important; margin-top: 25px; font-weight: 600; margin-bottom: 10px; }
+    .rendered-content p { line-height: 1.9; color: #cbd5e1 !important; margin-bottom: 20px; font-size: 1.1em; }
+    .rendered-content ul, .rendered-content ol { color: #cbd5e1 !important; margin-bottom: 20px; padding-left: 20px; }
+    .rendered-content li { margin-bottom: 8px; }
+    
+    .key-takeaways { background: #1e293b; border: 1px solid #3b82f6; border-left: 5px solid #3b82f6; padding: 25px; border-radius: 12px; margin: 25px 0; color: #f1f5f9 !important; }
+    .key-takeaways strong { color: #60a5fa !important; }
+    
+    .data-table-container { overflow-x: auto; margin: 30px 0; border-radius: 12px; border: 1px solid #334155; }
+    .data-table { width: 100%; border-collapse: collapse; background: #0f172a; }
     .data-table th { background-color: #3b82f6; color: white; padding: 15px; text-align: left; }
-    .data-table td { padding: 12px 15px; border-bottom: 1px solid #e5e7eb; color: #1e293b !important; }
+    .data-table td { padding: 15px; border-bottom: 1px solid #334155; color: #cbd5e1 !important; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -126,15 +133,15 @@ word_options = list(range(200, 2100, 100))
 
 with st.sidebar:
     st.header("⚙️ Global Strategy")
-    language = st.selectbox("Language", ["Persian", "English", "Spanish", "French", "German"])
+    language = st.selectbox("Language", ["English", "Persian", "Spanish", "French", "German"])
     industry = st.selectbox("Industry", ["Legal", "Medical", "Travel", "Real Estate", "Technology", "Finance", "E-commerce"])
-    business_name = st.text_input("Business Name", placeholder="e.g. Deldar Legal")
+    business_name = st.text_input("Business Name", placeholder="e.g. Acme Corp")
     business_url = st.text_input("Business Website URL", placeholder="e.g. https://yoursite.com")
     target_audience = st.text_input("Target Audience", placeholder="e.g. Local customers")
     st.divider()
     sidebar_word_count = st.select_slider("Target Words (Global)", options=word_options, value=1000)
     num_images = st.slider("Number of Images", 1, 3, 1)
-    include_infographic = st.checkbox("Include Educational Infographic (Visual)", value=True)
+    include_infographic = st.checkbox("Include Realistic Visual Infographic", value=True)
     include_table = st.checkbox("Include Summary/Stats Table", value=True)
     st.divider()
     if st.button("🗑️ Reset Application", type="secondary"):
@@ -221,36 +228,32 @@ if st.button("✨ GENERATE HUMANIZED ELITE ARTICLE"):
                 )
                 article_data = json.loads(response.choices[0].message.content)
 
-            # --- Image Generation Logic ---
             img_data_urls = []
             info_img_url = None
             
-            # 1. Generate Regular Banners
             if num_images > 0:
-                img_status = st.status(f"📸 Generating {num_images} banners (16:9) with Google Imagen 4.0...", expanded=True)
+                img_status = st.status(f"📸 Generating {num_images} realistic banners...", expanded=True)
                 for i in range(num_images):
                     img_status.write(f"Generating banner {i+1} of {num_images}...")
-                    v_prompt = f"Professional authentic high-end photography for {final_h1} in {industry}. Sharp focus, natural light. Single frame."
+                    v_prompt = f"Professional authentic high-end photography for {final_h1} in {industry}. Real textures, natural lighting, sharp focus, 35mm DSLR."
                     data_url = generate_google_image(v_prompt)
                     if data_url:
                         img_data_urls.append(data_url)
                 img_status.update(label="✅ Banners processed!", state="complete", expanded=False)
 
-            # 2. Generate Visual Infographic (If requested)
             if include_infographic:
-                with st.spinner("🎨 Creating Custom Visual Educational Infographic..."):
+                with st.spinner("🎨 Creating Realistic Visual Educational Visual..."):
                     info_url = generate_google_image(final_h1, is_infographic=True)
                     if info_url:
                         info_img_url = info_url
             
-            # --- Embed Visuals in HTML ---
             embedded_html = ""
             
             if info_img_url:
                 embedded_html += f'<hr><h2>Visual Educational Guide</h2><div class="banner-container"><img src="{info_img_url}"></div>'
             
             if img_data_urls:
-                embedded_html += f'<hr><h2>Professional Photography (1200x675)</h2>'
+                embedded_html += f'<hr><h2>Professional Imagery (1200x675)</h2>'
                 for url in img_data_urls:
                     embedded_html += f'<div class="banner-container"><img src="{url}"></div>'
             
@@ -260,7 +263,7 @@ if st.button("✨ GENERATE HUMANIZED ELITE ARTICLE"):
                 article_data["infographic_url"] = info_img_url
             
             st.session_state.generated_data = article_data
-            st.success("Elite Article with Visual Assets Ready!")
+            st.success("Elite Article with Realistic Visuals Ready!")
             
         except Exception as e: st.error(f"Error: {e}")
 
@@ -280,7 +283,7 @@ if st.session_state.generated_data:
     st.markdown("</div>", unsafe_allow_html=True)
 
     st.markdown("<div class='deliverable-card'>", unsafe_allow_html=True)
-    st.subheader("📄 Article Content & 16:9 Banners")
+    st.subheader("📄 High-Contrast Article Preview")
     st.markdown(f"<div class='rendered-content'>{data.get('article_html', '')}</div>", unsafe_allow_html=True)
     st.markdown("</div>", unsafe_allow_html=True)
 
@@ -298,19 +301,12 @@ if st.session_state.generated_data:
         use_container_width=True
     )
     
-    # Download section for Infographic separately
     if "infographic_url" in data:
-        st.write("**Download Custom Infographic:**")
+        st.write("**Download Realistic Infographic:**")
         try:
             info_bytes = base64.b64decode(data["infographic_url"].split(",")[1])
-            st.download_button(
-                label="📥 Download Educational Infographic (PNG)", 
-                data=info_bytes, 
-                file_name="educational_infographic.png", 
-                mime="image/png", 
-                use_container_width=True
-            )
-        except Exception: st.error("Error loading infographic file.")
+            st.download_button(label="📥 Download Visual (PNG)", data=info_bytes, file_name="visual_guide.png", mime="image/png", use_container_width=True)
+        except Exception: pass
 
     if "image_urls" in data and len(data["image_urls"]) > 0:
         st.write("**Download Original High-Res Banners:**")
@@ -319,17 +315,11 @@ if st.session_state.generated_data:
             with cols[idx]:
                 try:
                     img_bytes = base64.b64decode(url.split(",")[1])
-                    st.download_button(
-                        label=f"Banner {idx+1} (1200x675)", 
-                        data=img_bytes, 
-                        file_name=f"google_banner_{idx+1}.png", 
-                        mime="image/png", 
-                        key=f"dl_single_{idx}"
-                    )
-                except Exception: st.error(f"Error loading Image {idx+1}")
+                    st.download_button(label=f"Banner {idx+1}", data=img_bytes, file_name=f"banner_{idx+1}.png", mime="image/png", key=f"dl_single_{idx}")
+                except Exception: pass
     
     actual_words = len(strip_html(data.get("article_html", "")).split())
-    st.info(f"Audit: {actual_words} words | Assets: Visual Infographic Included")
+    st.info(f"Audit: {actual_words} words | Assets: High-Resolution Real-World Visuals Included")
     st.markdown("</div>", unsafe_allow_html=True)
 
 st.markdown("<p style='text-align: center; color: #9ca3af; font-size: 11px; margin-top: 60px;'>Elite SEO & GEO Engine | Google Imagen 4.0 | © 2026</p>", unsafe_allow_html=True)

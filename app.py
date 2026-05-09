@@ -7,6 +7,7 @@ import re
 import requests
 from io import BytesIO
 
+
 st.set_page_config(
     page_title="Elite AI SEO & GEO Engine",
     page_icon="🚀",
@@ -88,6 +89,7 @@ if "research_data" not in st.session_state:
 if "generated_data" not in st.session_state:
     st.session_state.generated_data = None
 
+
 st.markdown("""
 <style>
     .main { background-color: #f9fafb; }
@@ -104,27 +106,21 @@ st.markdown("""
         height: 400px;
         overflow: hidden;
         border-radius: 12px;
-        margin-bottom: 10px;
+        margin-bottom: 15px;
         border: 1px solid #e5e7eb;
     }
     .banner-container img { width: 100%; height: 100%; object-fit: cover; }
     .rendered-content h1 { color: #111827; font-weight: 800; border-bottom: 2px solid #3b82f6; padding-bottom: 10px; }
     .rendered-content h2 { color: #1f2937; margin-top: 30px; font-weight: 700; }
     .rendered-content p { line-height: 1.8; color: #374151; margin-bottom: 20px; }
-    .key-takeaways { 
-        background: #f0f7ff; 
-        border-left: 5px solid #007bff; 
-        padding: 20px; 
-        border-radius: 8px; 
-        margin: 20px 0; 
-        color: #1e293b !important; 
-    }
+    
+    /* INFOGRAPHIC STYLING */
     .visual-infographic {
         background: #f8fafc;
         border: 2px dashed #3b82f6;
-        padding: 25px;
+        padding: 30px;
         border-radius: 15px;
-        margin: 30px 0;
+        margin: 40px 0;
         color: #1e293b !important;
     }
     .infographic-step {
@@ -136,7 +132,7 @@ st.markdown("""
         border-radius: 10px;
         box-shadow: 0 4px 6px rgba(0,0,0,0.05);
         color: #1e293b !important;
-        font-weight: 500;
+        font-weight: 600;
     }
     .step-number {
         background: #3b82f6;
@@ -147,13 +143,22 @@ st.markdown("""
         display: flex;
         align-items: center;
         justify-content: center;
-        margin-right: 15px;
+        margin-right: 20px;
         font-weight: 900;
+    }
+    .key-takeaways { 
+        background: #f0f7ff; 
+        border-left: 5px solid #007bff; 
+        padding: 20px; 
+        border-radius: 8px; 
+        margin: 20px 0; 
+        color: #1e293b !important; 
     }
 </style>
 """, unsafe_allow_html=True)
 
 st.title("🚀 Elite SEO & GEO Content Engine")
+
 
 word_options = list(range(200, 2100, 100))
 
@@ -161,14 +166,13 @@ with st.sidebar:
     st.header("⚙️ Global Strategy")
     language = st.selectbox("Language", ["English", "Persian", "Spanish", "French", "German"])
     industry = st.selectbox("Industry", ["Legal", "Medical", "Travel", "Real Estate", "Technology", "Finance", "E-commerce"])
-    business_name = st.text_input("Business Name", placeholder="e.g. Deldar Legal")
-    business_url = st.text_input("Business Website URL", placeholder="e.g. https://deldarlegal.com")
-    target_audience = st.text_input("Target Audience", placeholder="e.g. Accident victims in CA")
+    business_name = st.text_input("Business Name", placeholder="e.g. Your Clinic Name")
+    business_url = st.text_input("Business Website URL", placeholder="e.g. https://yourwebsite.com")
+    target_audience = st.text_input("Target Audience", placeholder="e.g. Homeowners in CA")
+    
     st.divider()
     sidebar_word_count = st.select_slider("Target Words (Global)", options=word_options, value=1000)
-    
-    # User-requested sidebar location for visuals
-    num_images = st.slider("Number of Images", 1, 3, 1)
+    num_images = st.slider("Number of Banners", 1, 3, 2)
     include_infographic = st.checkbox("Include Educational Infographic", value=True)
     
     st.divider()
@@ -177,12 +181,13 @@ with st.sidebar:
         st.session_state.generated_data = None
         st.rerun()
 
+
 st.subheader("Step 1: Strategic Research & Competitor Analysis")
 col_s1, col_s2 = st.columns(2)
 with col_s1:
-    seed_topic = st.text_input("Enter Seed Topic", placeholder="e.g. Benefits of Dental Implants")
+    seed_topic = st.text_input("Enter Seed Topic", placeholder="e.g. Cost of Solar Panels")
 with col_s2:
-    competitor_links = st.text_area("Competitor URLs (One per line)", placeholder="Paste Top 3-5 Ranking URLs here")
+    competitor_links = st.text_area("Competitor URLs (One per line)", placeholder="Paste ranking URLs to analyze content gaps")
 
 if st.button("🔍 START RESEARCH & ANALYSIS"):
     if not seed_topic or not business_name:
@@ -191,13 +196,13 @@ if st.button("🔍 START RESEARCH & ANALYSIS"):
         try:
             client = OpenAI(api_key=API_KEY)
             res_prompt = f"""
-            Industry: {industry}. Brand: {business_name}. Website: {business_url}. Topic: '{seed_topic}'. 
+            Industry: {industry}. Brand: {business_name}. Topic: '{seed_topic}'. 
             Competitors: {competitor_links}.
-            Action: Generate 3 High-CTR Magnetic Headlines (Front-load keyword, use numbers, power words, and [2026 Guide]).
+            Action: Generate 3 Magnetic Headlines (Front-load keyword, power words, [2026 Guide]).
             Provide 1 Primary Keyword, 5 Secondary, 10 LSI, and a deep H2-H4 outline.
             Return JSON: {{'headlines': [], 'primary': '', 'secondary': [], 'lsi': [], 'structure_text': ''}}
             """
-            with st.spinner("⏳ Analyzing search landscape..."):
+            with st.spinner("⏳ Analyzing Search Intent and Landscapes..."):
                 response = client.chat.completions.create(
                     model="gpt-4o",
                     messages=[{"role": "user", "content": res_prompt}],
@@ -211,8 +216,9 @@ if st.button("🔍 START RESEARCH & ANALYSIS"):
                     "lsi": ", ".join(raw_res.get('lsi', [])) if isinstance(raw_res.get('lsi'), list) else raw_res.get('lsi', ""),
                     "outline": raw_res.get('structure_text', "")
                 }
-                st.success("Research & Analysis Complete!")
+                st.success("Research Complete!")
         except Exception as e: st.error(f"Error: {e}")
+
 
 st.divider()
 st.subheader("Step 2: Elite Article Generation")
@@ -226,9 +232,7 @@ with col_r:
     lsi_k = st.text_area("LSI Keywords", value=res.get("lsi", ""))
     headings_k = st.text_area("Heading Hierarchy", value=res.get("outline", ""), height=130)
 
-col_opt1, col_opt2 = st.columns(2)
-with col_opt1:
-    search_intent = st.selectbox("Search Intent", ["Informational", "Transactional", "Commercial"])
+search_intent = st.selectbox("Search Intent", ["Informational", "Transactional", "Commercial"])
 
 if st.button("✨ GENERATE HUMANIZED ELITE ARTICLE"):
     if not final_h1 or not primary_k:
@@ -236,57 +240,66 @@ if st.button("✨ GENERATE HUMANIZED ELITE ARTICLE"):
     else:
         try:
             client = OpenAI(api_key=API_KEY)
-            with st.spinner(f"⏳ Synthesizing elite content and {num_images} photorealistic banners..."):
+            with st.spinner(f"⏳ Writing for {business_name} and generating realistic banners..."):
                 
+                infographic_instruction = ""
+                if include_infographic:
+                    infographic_instruction = """
+                    MANDATORY: You MUST include a highly visual Educational Infographic block in the middle of the article.
+                    Structure it EXACTLY like this:
+                    <div class="visual-infographic">
+                        <h3>Quick Guide: [Step-by-Step Title]</h3>
+                        <div class="infographic-step"><div class="step-number">1</div>Text for step 1</div>
+                        <div class="infographic-step"><div class="step-number">2</div>Text for step 2</div>
+                        <div class="infographic-step"><div class="step-number">3</div>Text for step 3</div>
+                        ...
+                    </div>
+                    """
+
                 user_p = f"""
-                You are a world-class SEO content writer. 
+                You are an elite SEO Investigative Journalist. 
                 Task: Write a master-level article for {business_name} in {language}.
                 Word count: {sidebar_word_count}. Intent: {search_intent}. 
                 H1 Title: {final_h1}. Structure: {headings_k}.
                 Website: {business_url}.
                 
-                STRICT CLEANING RULES:
-                - DO NOT include "H1:", "H2:", or "H3:" text labels.
-                - Use only <h1>, <h2>, <h3> tags.
+                CORE RULES:
+                - Use only <h1>, <h2>, <h3> tags. NO text labels like "H1:".
+                - {infographic_instruction}
+                - Start with a <div class='key-takeaways'><strong>Key Highlights:</strong> [Bullet points]</div>.
+                - Use natural burstiness and short paragraphs.
+                - Include 2 external .gov/.edu links.
+                - Create a powerful CTA for {business_name} using {business_url}.
+                - META: 'meta_title' (50-60 chars), 'meta_description' (150 chars).
                 
-                STRATEGY RULES:
-                1. Start with a <div class='key-takeaways'><strong>Key Highlights:</strong> [Bullet points]</div> after H1.
-                2. {'MANDATORY: Include a section wrapped in <div class="visual-infographic"><h3>Quick Guide</h3>...</div> with steps wrapped in <div class="infographic-step"><div class="step-number">#</div>Text</div>' if include_infographic else ""}
-                3. Scannability: Max 3 sentences per paragraph.
-                4. Links: Include 2 relevant .gov/.edu sources.
-                5. CTA: Include a powerful CTA for {business_name} at the end, integrating {business_url}.
-                6. Humanize: Use professional first-person tone. Vary sentence length.
-                
-                META RULES: 
-                - 'meta_title': 50-60 chars, front-load "{primary_k}", use [2026].
-                - 'meta_description': 150 chars max.
                 Return ONLY JSON: {{'meta_title': '', 'meta_description': '', 'article_html': ''}}
                 """
                 
                 response = client.chat.completions.create(
                     model="gpt-4o",
-                    messages=[{"role": "system", "content": f"Expert in {industry} writing. Follow HTML visual rules."}, {"role": "user", "content": user_p}],
+                    messages=[{"role": "system", "content": f"Expert in {industry} writing and conversion copy."}, {"role": "user", "content": user_p}],
                     response_format={"type": "json_object"}
                 )
                 gen_data = json.loads(response.choices[0].message.content)
                 
                 img_urls = []
                 for i in range(num_images):
-                    v_prompt = f"AUTHENTIC REAL-WORLD PHOTOGRAPHY of {final_h1} in {industry} setting. Natural sunlight, high-end DSLR, authentic textures, NO CGI, NO CARTOON. Realistic workspace, 8k resolution."
+                    v_prompt = f"Authentic professional real-world photography of {final_h1} for {industry} industry. Natural sunlight, high-end DSLR textures, NO CGI, NO CARTOONS, realistic workspace/setting, 8k sharp focus."
                     img_res = client.images.generate(model="dall-e-3", prompt=v_prompt, size="1792x1024", quality="hd")
                     img_urls.append(img_res.data[0].url)
                 
                 gen_data["image_urls"] = img_urls
                 st.session_state.generated_data = gen_data
-                st.success("Elite Article Generated!")
+                st.success("Elite Deliverables Ready!")
         except Exception as e: st.error(f"Error: {e}")
+
 
 if st.session_state.generated_data:
     data = st.session_state.generated_data
     st.divider()
     
     st.markdown("<div class='deliverable-card'>", unsafe_allow_html=True)
-    st.subheader("📋 SEO Meta Data")
+    st.subheader("📋 Meta Information")
     m1, m2 = st.columns(2)
     fh = 100
     with m1:
@@ -300,12 +313,12 @@ if st.session_state.generated_data:
     st.markdown("</div>", unsafe_allow_html=True)
 
     st.markdown("<div class='deliverable-card'>", unsafe_allow_html=True)
-    st.subheader("📄 Interactive Content Preview")
+    st.subheader("📄 Interactive Article Preview")
     st.markdown(f"<div class='rendered-content'>{data.get('article_html', '')}</div>", unsafe_allow_html=True)
     st.markdown("</div>", unsafe_allow_html=True)
 
     if "image_urls" in data:
-        st.subheader(f"🖼️ Authentic Banners ({len(data['image_urls'])} total)")
+        st.subheader(f"🖼️ Realistic Banners ({len(data['image_urls'])} total)")
         for idx, url in enumerate(data["image_urls"]):
             st.markdown(f'<div class="banner-container"><img src="{url}"></div>', unsafe_allow_html=True)
             img_bytes = download_image_bytes(url)
@@ -317,10 +330,10 @@ if st.session_state.generated_data:
     c1, c2 = st.columns(2)
     with c1: copy_to_clipboard(data.get("article_html", ""), "💾 Copy HTML Code", "html", True)
     with c2: copy_to_clipboard(data.get("article_html", ""), "👤 Copy Formatted Text", "rich", False)
-    st.download_button(label="📥 Download Article (HTML File)", data=data.get("article_html", ""), file_name="seo_article.html", mime="text/html", use_container_width=True)
+    st.download_button(label="📥 Download HTML File", data=data.get("article_html", ""), file_name="seo_article.html", mime="text/html", use_container_width=True)
     
     actual_words = len(strip_html(data.get("article_html", "")).split())
-    st.markdown(f"<div style='background: #1e293b; color: white; padding: 16px; border-radius: 10px; border-left: 5px solid #3b82f6;'><strong>Audit:</strong> {actual_words} words | <strong>Grade:</strong> Elite Content Strategy</div>", unsafe_allow_html=True)
+    st.markdown(f"<div style='background: #1e293b; color: white; padding: 16px; border-radius: 10px; border-left: 5px solid #3b82f6;'><strong>Audit:</strong> {actual_words} words | <strong>Strategy:</strong> Elite GEO/SEO</div>", unsafe_allow_html=True)
     st.markdown("</div>", unsafe_allow_html=True)
 
 st.markdown("<p style='text-align: center; color: #9ca3af; font-size: 11px; margin-top: 60px;'>Elite SEO & GEO Engine | Powered by OpenAI | © 2026</p>", unsafe_allow_html=True)

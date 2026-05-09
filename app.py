@@ -13,22 +13,22 @@ st.set_page_config(
 )
 
 try:
-    # We use st.secrets to hide the key from GitHub scanners
+    # Fetching the key from Streamlit Secrets to prevent GitHub revocation
     API_KEY = st.secrets["OPENAI_API_KEY"]
 except Exception:
     st.error("❌ API Key not found! Please add 'OPENAI_API_KEY' to your Streamlit Secrets dashboard.")
     st.stop()
 
 def strip_html(html_string):
-    """Removes HTML tags for word count processing."""
+    """Removes HTML tags for word count auditing."""
     clean = re.compile('<.*?>')
     return re.sub(clean, '', html_string)
 
 def copy_to_clipboard(content, button_label="Copy", key_suffix="", is_html=False):
-    """JavaScript-based copy function supporting HTML and Rich Text."""
+    """JavaScript-based copy function supporting HTML and Rich Text (preserving headings)."""
     safe_content = content.replace('\\', '\\\\').replace('`', '\\`').replace('$', '\\$').replace('"', '\\"')
     if is_html:
-        # Standard copy for code
+        # Standard copy for code/html
         js_code = f"""
         var textArea = document.createElement("textarea");
         textArea.value = `{safe_content}`;
@@ -92,17 +92,6 @@ st.markdown("""
         margin-bottom: 20px;
         box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
     }
-    .keyword-pill {
-        display: inline-block;
-        background: #eff6ff;
-        color: #1d4ed8;
-        padding: 4px 12px;
-        border-radius: 20px;
-        margin: 4px;
-        font-size: 12px;
-        font-weight: 600;
-        border: 1px solid #dbeafe;
-    }
     .banner-container {
         width: 100%;
         height: 350px;
@@ -117,7 +106,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 st.title("🚀 Elite SEO & GEO Content Engine")
-st.markdown("<p style='color: #6b7280; margin-top: -15px;'>Two-Phase Professional AI Writing Platform</p>", unsafe_allow_html=True)
+st.markdown("<p style='color: #6b7280; margin-top: -15px;'>Professional Unified AI Writing Platform</p>", unsafe_allow_html=True)
 
 with st.sidebar:
     st.header("⚙️ Global Strategy")
@@ -127,127 +116,130 @@ with st.sidebar:
     target_audience = st.text_input("Target Audience", placeholder="e.g. Accident victims in CA")
     
     st.divider()
-    if st.button("🗑️ Reset All Progress", type="secondary"):
+    if st.button("🗑️ Reset Application", type="secondary"):
         st.session_state.research_data = None
         st.session_state.generated_data = None
         st.rerun()
 
-tab_research, tab_generator = st.tabs(["🔍 Phase 1: Research", "✨ Phase 2: Elite Writing"])
+st.subheader("Step 1: Strategic Research")
+seed_topic = st.text_input("Enter Seed Topic", placeholder="e.g. Benefits of Dental Implants")
 
-with tab_research:
-    st.subheader("Topic Discovery & Structure")
-    seed_topic = st.text_input("Enter Topic Idea", placeholder="e.g. Best Divorce Lawyer in San Francisco")
-    
-    if st.button("🔍 START STRATEGIC RESEARCH"):
-        if not seed_topic or not business_name:
-            st.warning("Please enter the Topic and Business Name.")
-        else:
-            try:
-                client = OpenAI(api_key=API_KEY)
-                res_prompt = f"""
-                Industry: {industry}. Brand: {business_name}. Topic: "{seed_topic}".
-                Generate: 3 High-CTR Magnetic Headlines, 1 Primary Keyword, 5 Secondary Keywords, 10 LSI Keywords, and a deep-dive H2-H4 outline.
-                Return ONLY JSON: {{"headlines": [], "primary": "", "secondary": "", "lsi": "", "structure_text": ""}}
-                """
-                with st.spinner("⏳ Analyzing search landscape..."):
-                    response = client.chat.completions.create(
-                        model="gpt-4o",
-                        messages=[{"role": "user", "content": res_prompt}],
-                        response_format={"type": "json_object"}
-                    )
-                    st.session_state.research_data = json.loads(response.choices[0].message.content)
-                    st.success("Research Complete! Values transferred to Phase 2.")
-            except Exception as e:
-                st.error(f"Research Error: {e}")
+if st.button("🔍 START RESEARCH"):
+    if not seed_topic or not business_name:
+        st.warning("Please enter the Seed Topic and Business Name.")
+    else:
+        try:
+            client = OpenAI(api_key=API_KEY)
+            res_prompt = f"""
+            Industry: {industry}. Brand: {business_name}. Topic: "{seed_topic}".
+            Generate: 3 High-CTR Magnetic Headlines, 1 Primary Keyword, 5 Secondary Keywords, 10 LSI Keywords, and a deep-dive H2-H4 outline.
+            Return ONLY JSON: {{"headlines": [], "primary": "", "secondary": [], "lsi": [], "structure_text": ""}}
+            """
+            with st.spinner("⏳ Analyzing search landscape..."):
+                response = client.chat.completions.create(
+                    model="gpt-4o",
+                    messages=[{"role": "user", "content": res_prompt}],
+                    response_format={"type": "json_object"}
+                )
+                raw_res = json.loads(response.choices[0].message.content)
+                
+                # Cleaning the data: Join lists into clean comma-separated strings
+                st.session_state.research_data = {
+                    "headline": raw_res.get('headlines', [""])[0],
+                    "primary": raw_res.get('primary', ""),
+                    "secondary": ", ".join(raw_res.get('secondary', [])) if isinstance(raw_res.get('secondary'), list) else raw_res.get('secondary', ""),
+                    "lsi": ", ".join(raw_res.get('lsi', [])) if isinstance(raw_res.get('lsi'), list) else raw_res.get('lsi', ""),
+                    "outline": raw_res.get('structure_text', "")
+                }
+                st.success("Research Complete! Content fields have been populated below.")
+        except Exception as e:
+            st.error(f"Research Error: {e}")
 
-    if st.session_state.research_data:
-        res = st.session_state.research_data
-        st.markdown("<div class='deliverable-card'>", unsafe_allow_html=True)
-        st.write("**Magnetic Headlines:**")
-        for h in res.get('headlines', []): st.info(h)
-        st.write("**Primary Keyword:**", res.get('primary', ''))
-        st.write("**Suggested Outline:**")
-        st.code(res.get('structure_text', ''))
-        st.markdown("</div>", unsafe_allow_html=True)
+st.divider()
+st.subheader("Step 2: Elite Article Generation")
+res = st.session_state.research_data or {}
 
-with tab_generator:
-    res_data = st.session_state.research_data or {}
-    col_l, col_r = st.columns(2)
-    with col_l:
-        article_title = st.text_input("Final H1 Title", value=res_data.get("headlines", [""])[0] if res_data else "")
-        primary_k = st.text_input("Primary Keyword (H1)", value=res_data.get("primary", "") if res_data else "")
-        secondary_k = st.text_area("Secondary Keywords", value=res_data.get("secondary", "") if res_data else "")
-    with col_r:
-        lsi_k = st.text_area("LSI Keywords", value=res_data.get("lsi", "") if res_data else "")
-        headings_k = st.text_area("Heading Hierarchy (H2-H4)", value=res_data.get("structure_text", "") if res_data else "")
-    
+col_l, col_r = st.columns(2)
+with col_l:
+    final_h1 = st.text_input("Final H1 Title", value=res.get("headline", ""))
+    primary_k = st.text_input("Primary Keyword", value=res.get("primary", ""))
+    secondary_k = st.text_area("Secondary Keywords", value=res.get("secondary", ""), help="Comma separated")
+with col_r:
+    lsi_k = st.text_area("LSI Keywords", value=res.get("lsi", ""), help="Comma separated")
+    headings_k = st.text_area("Heading Hierarchy (H2-H4)", value=res.get("outline", ""), height=130)
+
+col_b1, col_b2 = st.columns(2)
+with col_b1:
     search_intent = st.selectbox("Search Intent", ["Informational", "Transactional", "Commercial"])
+with col_b2:
     word_count_goal = st.select_slider("Target Words", [500, 1000, 1500, 2000], value=1000)
 
-    if st.button("✨ GENERATE HUMANIZED ELITE ARTICLE"):
-        if not article_title or not primary_k:
-            st.warning("H1 Title and Primary Keyword are required.")
-        else:
-            try:
-                client = OpenAI(api_key=API_KEY)
-                with st.spinner("⏳ Synthesizing deep-dive content and DALL-E 3 banner..."):
-                    # Text Generation
-                    sys_p = f"You are an elite SEO/GEO Investigative Journalist for {industry}."
-                    user_p = f"""
-                    Write a 100% unique, human-grade deep-dive for {business_name} in {language}.
-                    Title: {article_title}. Target words: {word_count_goal}. Intent: {search_intent}.
-                    Structure: {headings_k}. 
-                    Strict Rules: No em-dashes. Vary sentence lengths. No clichés. 
-                    Include 2 .gov/.edu links. Include 3 FAQs. Use <strong> and <u> tags.
-                    Return JSON: {{'meta_title': '', 'meta_description': '', 'article_html': ''}}
-                    """
-                    
-                    response = client.chat.completions.create(
-                        model="gpt-4o",
-                        messages=[{"role": "system", "content": sys_p}, {"role": "user", "content": user_p}],
-                        response_format={"type": "json_object"}
-                    )
-                    gen_data = json.loads(response.choices[0].message.content)
-                    
-                    # Image Generation
-                    img_prompt = f"Professional high-resolution realistic photography for '{article_title}' in {industry} field, cinematic lighting, wide angle, no text."
-                    img_res = client.images.generate(model="dall-e-3", prompt=img_prompt, size="1792x1024", quality="hd")
-                    gen_data["image_url"] = img_res.data[0].url
-                    
-                    st.session_state.generated_data = gen_data
-                    st.success("Deliverables Generated!")
-            except Exception as e:
-                st.error(f"Generation Error: {e}")
+if st.button("✨ GENERATE HUMANIZED ELITE ARTICLE"):
+    if not final_h1 or not primary_k:
+        st.warning("H1 Title and Primary Keyword are required.")
+    else:
+        try:
+            client = OpenAI(api_key=API_KEY)
+            with st.spinner("⏳ Synthesizing deep-dive content and DALL-E 3 banner..."):
+                # 1. Text Generation
+                sys_p = f"You are an elite SEO/GEO Investigative Journalist for {industry}."
+                user_p = f"""
+                Write a 100% unique, human-grade deep-dive for {business_name} in {language}.
+                Title: {final_h1}. Target words: {word_count_goal}. Intent: {search_intent}.
+                Structure: {headings_k}. 
+                Strict Rules: No em-dashes. Vary sentence lengths. No clichés. 
+                Include 2 .gov/.edu links. Include 3 FAQs. Use <strong> and <u> tags.
+                Return JSON: {{'meta_title': '', 'meta_description': '', 'article_html': ''}}
+                """
+                
+                response = client.chat.completions.create(
+                    model="gpt-4o",
+                    messages=[{"role": "system", "content": sys_p}, {"role": "user", "content": user_p}],
+                    response_format={"type": "json_object"}
+                )
+                gen_data = json.loads(response.choices[0].message.content)
+                
+                # 2. Image Generation
+                img_prompt = f"Professional realistic cinematic photography for '{final_h1}' in {industry} field, studio lighting, wide angle, 8k, no text."
+                img_res = client.images.generate(model="dall-e-3", prompt=img_prompt, size="1792x1024", quality="hd")
+                gen_data["image_url"] = img_res.data[0].url
+                
+                st.session_state.generated_data = gen_data
+                st.success("Elite Deliverables Generated!")
+        except Exception as e:
+            st.error(f"Generation Error: {e}")
 
 if st.session_state.generated_data:
     data = st.session_state.generated_data
+    st.divider()
     if "image_url" in data:
         st.markdown(f'<div class="banner-container"><img src="{data["image_url"]}"></div>', unsafe_allow_html=True)
 
     st.markdown("<div class='deliverable-card'>", unsafe_allow_html=True)
+    st.subheader("📋 Meta Information")
     m1, m2 = st.columns(2)
     with m1:
         st.write("**Meta Title**")
-        st.text_input("Title", value=data.get("meta_title", ""), label_visibility="collapsed")
+        st.text_input("Title", value=data.get("meta_title", ""), label_visibility="collapsed", key="mt_disp")
         copy_to_clipboard(data.get("meta_title", ""), "📋 Copy Title", "mt", True)
     with m2:
         st.write("**Meta Description**")
-        st.text_area("Desc", value=data.get("meta_description", ""), height=68, label_visibility="collapsed")
+        st.text_area("Desc", value=data.get("meta_description", ""), height=68, label_visibility="collapsed", key="md_disp")
         copy_to_clipboard(data.get("meta_description", ""), "📋 Copy Desc", "md", True)
     st.markdown("</div>", unsafe_allow_html=True)
 
     st.markdown("<div class='deliverable-card'>", unsafe_allow_html=True)
-    st.write("**Article Content**")
+    st.subheader("📄 Content Body")
     c1, c2, _ = st.columns([1, 1, 2])
     with c1: copy_to_clipboard(data.get("article_html", ""), "💾 Copy HTML Code", "html", True)
     with c2: copy_to_clipboard(data.get("article_html", ""), "👤 Copy Formatted Text", "rich", False)
     
     t1, t2 = st.tabs(["👁️ Preview", "💻 HTML Source"])
     with t1: st.markdown(f"<div class='rendered-content'>{data.get('article_html', '')}</div>", unsafe_allow_html=True)
-    with t2: st.text_area("Code", value=data.get("article_html", ""), height=400, label_visibility="collapsed")
-    st.markdown("</div>", unsafe_allow_html=True)
-
+    with t2: st.text_area("Code", value=data.get("article_html", ""), height=400, label_visibility="collapsed", key="html_src")
+    
     actual_words = len(strip_html(data.get("article_html", "")).split())
-    st.markdown(f"<div style='background:#f3f4f6;padding:12px;border-radius:8px;'>Audit: {actual_words} words | Brand: {business_name} | Grade: Elite</div>", unsafe_allow_html=True)
+    st.markdown(f"<div style='background:#f3f4f6;padding:12px;border-radius:8px;margin-top:15px;'>Audit: {actual_words} words | Brand: {business_name} | Grade: Elite</div>", unsafe_allow_html=True)
+    st.markdown("</div>", unsafe_allow_html=True)
 
 st.markdown("<p style='text-align: center; color: #9ca3af; font-size: 11px; margin-top: 60px;'>Elite SEO & GEO Engine | Powered by OpenAI | © 2026</p>", unsafe_allow_html=True)

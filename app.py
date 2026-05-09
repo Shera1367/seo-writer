@@ -12,7 +12,13 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Hardcoded API Key as requested
+# دیگر کلید را اینجا نمی‌نویسیم تا توسط OpenAI باطل نشود
+try:
+    API_KEY = st.secrets["OPENAI_API_KEY"]
+except KeyError:
+    st.error("❌ API Key not found! Please add 'OPENAI_API_KEY' to your Streamlit Secrets.")
+    st.stop()
+
 API_KEY = "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"
 
 def strip_html(html_string):

@@ -100,6 +100,7 @@ st.markdown("""
     
     .rendered-content h1 { color: #111827 !important; font-weight: 800; border-bottom: 2px solid #3b82f6; padding-bottom: 10px; }
     .rendered-content h2 { color: #1f2937 !important; margin-top: 30px; font-weight: 700; }
+    .rendered-content h3 { color: #374151 !important; margin-top: 25px; font-weight: 600; }
     .rendered-content p { line-height: 1.8; color: #374151 !important; margin-bottom: 20px; }
     
     .key-takeaways { 
@@ -251,6 +252,11 @@ if st.button("✨ GENERATE HUMANIZED ELITE ARTICLE"):
                 - {info_instr}
                 - Professional tone, actionable expert advice.
                 - END with a strong CTA mentioning {business_url}.
+                
+                STRICT FORMATTING:
+                - ABSOLUTELY NO Markdown hashtags (e.g., #, ##, ###). 
+                - Use only raw <h1>, <h2>, <h3> tags for all structure.
+                - No labels like "H1:", "H2:". 
                 - NO placeholders like [Image Here].
                 
                 Return JSON: {{'meta_title': '', 'meta_description': '', 'article_html': ''}}
@@ -258,7 +264,7 @@ if st.button("✨ GENERATE HUMANIZED ELITE ARTICLE"):
                 
                 response = openai_client.chat.completions.create(
                     model="gpt-4o",
-                    messages=[{"role": "system", "content": "Master SEO Journalist."}, {"role": "user", "content": user_p}],
+                    messages=[{"role": "system", "content": "Master SEO Journalist. You only output pure HTML for the article body and never use Markdown syntax."}, {"role": "user", "content": user_p}],
                     response_format={"type": "json_object"}
                 )
                 article_data = json.loads(response.choices[0].message.content)
@@ -273,7 +279,7 @@ if st.button("✨ GENERATE HUMANIZED ELITE ARTICLE"):
                         img_data_urls.append(data_url)
                         embedded_images_html += f'<div class="banner-container"><img src="{data_url}"></div>'
                 
-                # Append images to the main HTML so they are part of the preview and export
+                # Append images to the main HTML
                 article_data["article_html"] += embedded_images_html
                 article_data["image_urls"] = img_data_urls
                 
@@ -316,18 +322,22 @@ if st.session_state.generated_data:
     )
     
     # Separate download buttons for individual PNGs
-    if "image_urls" in data:
+    if "image_urls" in data and len(data["image_urls"]) > 0:
         st.write("**Download Individual Banners:**")
         cols = st.columns(len(data["image_urls"]))
         for idx, url in enumerate(data["image_urls"]):
             with cols[idx]:
-                st.download_button(
-                    label=f"Banner {idx+1} (PNG)", 
-                    data=base64.b64decode(url.split(",")[1]), 
-                    file_name=f"banner_{idx+1}.png", 
-                    mime="image/png", 
-                    key=f"dl_single_{idx}"
-                )
+                try:
+                    img_bytes = base64.b64decode(url.split(",")[1])
+                    st.download_button(
+                        label=f"Banner {idx+1} (PNG)", 
+                        data=img_bytes, 
+                        file_name=f"banner_{idx+1}.png", 
+                        mime="image/png", 
+                        key=f"dl_single_{idx}"
+                    )
+                except Exception:
+                    st.error(f"Error loading Image {idx+1}")
     
     actual_words = len(strip_html(data.get("article_html", "")).split())
     st.info(f"Audit: {actual_words} words | Grade: Elite SEO Content")

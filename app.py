@@ -119,34 +119,36 @@ st.markdown("""
         margin: 20px 0; 
         color: #1e293b !important; 
     }
-    /* STYLING FOR THE VISUAL INFOGRAPHIC */
     .visual-infographic {
         background: #f8fafc;
-        border: 2px dashed #cbd5e1;
+        border: 2px dashed #3b82f6;
         padding: 25px;
         border-radius: 15px;
         margin: 30px 0;
+        color: #1e293b !important;
     }
     .infographic-step {
         display: flex;
         align-items: center;
         margin-bottom: 15px;
-        padding: 10px;
+        padding: 15px;
         background: white;
         border-radius: 10px;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        color: #1e293b !important;
+        font-weight: 500;
     }
     .step-number {
         background: #3b82f6;
         color: white;
-        width: 30px;
-        height: 30px;
+        min-width: 35px;
+        height: 35px;
         border-radius: 50%;
         display: flex;
         align-items: center;
         justify-content: center;
         margin-right: 15px;
-        font-weight: bold;
+        font-weight: 900;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -219,11 +221,11 @@ with col_r:
 
 col_opt1, col_opt2 = st.columns(2)
 with col_opt1:
-    num_images = st.slider("Number of Images needed", 1, 3, 1)
-    include_infographic = st.checkbox("Include Educational Infographic/Checklist", value=True)
-with col_opt2:
     search_intent = st.selectbox("Search Intent", ["Informational", "Transactional", "Commercial"])
     st.info(f"💡 Target Words: **{sidebar_word_count}**")
+with col_opt2:
+    num_images = st.slider("Number of Images needed", 1, 3, 1)
+    include_infographic = st.checkbox("Include Educational Infographic/Checklist", value=True)
 
 if st.button("✨ GENERATE HUMANIZED ELITE ARTICLE"):
     if not final_h1 or not primary_k:
@@ -233,7 +235,6 @@ if st.button("✨ GENERATE HUMANIZED ELITE ARTICLE"):
             client = OpenAI(api_key=API_KEY)
             with st.spinner(f"⏳ Synthesizing elite content and {num_images} photorealistic banners..."):
                 
-                # REFINED PROMPT FOR INFOGRAPHIC AND CLEAN HEADINGS
                 user_p = f"""
                 You are a world-class SEO content writer. 
                 Task: Write a master-level article for {business_name} in {language}.
@@ -246,7 +247,7 @@ if st.button("✨ GENERATE HUMANIZED ELITE ARTICLE"):
                 
                 STRATEGY RULES:
                 1. Start with a <div class='key-takeaways'><strong>Key Highlights:</strong> [Bullet points]</div> after H1.
-                2. {'MANDATORY: Include a section wrapped in <div class="visual-infographic">...</div> with steps wrapped in <div class="infographic-step"><div class="step-number">#</div>Text</div>' if include_infographic else ""}
+                2. {'MANDATORY: Include a section wrapped in <div class="visual-infographic"><h3>Quick Guide</h3>...</div> with steps wrapped in <div class="infographic-step"><div class="step-number">#</div>Text</div>' if include_infographic else ""}
                 3. Scannability: Max 3 sentences per paragraph.
                 4. Links: Include 2 relevant .gov/.edu sources.
                 5. Humanize: Use professional first-person expert tone. Vary sentence length.
@@ -266,8 +267,7 @@ if st.button("✨ GENERATE HUMANIZED ELITE ARTICLE"):
                 
                 img_urls = []
                 for i in range(num_images):
-                    # NEW ULTRA-REALISTIC PROMPT
-                    v_prompt = f"AUTHENTIC REAL-WORLD PHOTOGRAPHY of {final_h1} in {industry} setting. Natural sunlight, high-end professional DSLR camera, authentic skin textures, professional equipment, sharp details, NO CGI, NO CARTOON, NO SATURATION. National Geographic style, professional workplace environment, 8k resolution."
+                    v_prompt = f"AUTHENTIC REAL-WORLD PHOTOGRAPHY of {final_h1} in {industry} setting. Natural sunlight, high-end professional DSLR camera, authentic textures, sharp details, NO CGI, NO CARTOON. Realistic workplace environment, 8k resolution."
                     img_res = client.images.generate(model="dall-e-3", prompt=v_prompt, size="1792x1024", quality="hd")
                     img_urls.append(img_res.data[0].url)
                 
